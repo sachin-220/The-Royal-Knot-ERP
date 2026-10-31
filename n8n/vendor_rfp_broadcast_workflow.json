@@ -1,0 +1,91 @@
+{
+  "name": "KnotCore_Vendor_RFP_OneWayMirror_Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "vendor-quote-submission",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-vendor-webhook-1",
+      "name": "Vendor Confidential Quote Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [180, 280]
+    },
+    {
+      "parameters": {
+        "jsCode": "// WCI Scoring & +2-Sigma Anomaly Detection Engine\nconst quote = $input.item.json.body;\nconst price = parseFloat(quote.quoted_price);\nconst histAvg = parseFloat(quote.historical_avg || 5000000);\nconst stdDev = parseFloat(quote.std_dev || 400000);\n\n// Check +2-sigma threshold\nconst isAnomaly = price > (histAvg + 2 * stdDev);\n\n// Calculate Weighted Composite Index (WCI)\n// WCI = 0.35*(PriceScore) + 0.30*(Quality) + 0.20*(Delivery) + 0.15*(FinancialStability)\nconst priceScore = Math.max(0, Math.min(100, 100 - ((price - histAvg) / histAvg) * 100));\nconst quality = parseFloat(quote.quality_score || 90);\nconst delivery = parseFloat(quote.delivery_score || 90);\nconst financial = parseFloat(quote.financial_stability_score || 85);\n\nconst wci = (0.35 * priceScore) + (0.30 * quality) + (0.20 * delivery) + (0.15 * financial);\n\nreturn {\n  wedding_id: quote.wedding_id || 1,\n  category_code: quote.category_code || 'CAT-02',\n  category_name: quote.category_name || 'Royal Catering & Banqueting',\n  vendor_name: quote.vendor_name,\n  quoted_price: price,\n  historical_avg: histAvg,\n  std_dev: stdDev,\n  quality_score: quality,\n  delivery_score: delivery,\n  financial_stability_score: financial,\n  wci_score: parseFloat(wci.toFixed(2)),\n  anomaly_flag: isAnomaly,\n  status: isAnomaly ? 'rejected' : 'submitted'\n};"
+      },
+      "id": "node-wci-evaluator-2",
+      "name": "WCI Scoring & Anomaly Detection",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 280]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO vendor_quotes (wedding_id, category_code, category_name, vendor_name, quoted_price, historical_avg, std_dev, quality_score, delivery_score, financial_stability_score, wci_score, anomaly_flag, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id, vendor_name, wci_score, anomaly_flag;",
+        "additionalFields": {
+          "queryParams": "={{ [ $json.wedding_id, $json.category_code, $json.category_name, $json.vendor_name, $json.quoted_price, $json.historical_avg, $json.std_dev, $json.quality_score, $json.delivery_score, $json.financial_stability_score, $json.wci_score, $json.anomaly_flag, $json.status ] }}"
+        }
+      },
+      "id": "node-postgres-quotes-3",
+      "name": "PostgreSQL Insert Vendor Quote",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [700, 280]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"success\",\n  \"message\": \"Confidential quote received via One-Way Mirror. Transmitted to KnotCore Admin.\",\n  \"quote_id\": $json.id,\n  \"wci_score\": $json.wci_score,\n  \"anomaly_flag\": $json.anomaly_flag\n}"
+      },
+      "id": "node-respond-vendor-4",
+      "name": "Acknowledge Private Quote",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [960, 280]
+    }
+  ],
+  "connections": {
+    "Vendor Confidential Quote Webhook": {
+      "main": [
+        [
+          {
+            "node": "WCI Scoring & Anomaly Detection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WCI Scoring & Anomaly Detection": {
+      "main": [
+        [
+          {
+            "node": "PostgreSQL Insert Vendor Quote",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PostgreSQL Insert Vendor Quote": {
+      "main": [
+        [
+          {
+            "node": "Acknowledge Private Quote",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

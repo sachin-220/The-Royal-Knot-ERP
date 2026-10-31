@@ -96,6 +96,14 @@ export default function Navbar({
         </button>
 
         <button
+          onClick={() => setActiveTab('enquiries')}
+          className={activeTab === 'enquiries' ? 'btn-royal-gold' : 'btn-royal-outline'}
+          style={{ fontSize: '0.82rem', padding: '8px 14px' }}
+        >
+          User Enquiries & RFPs
+        </button>
+
+        <button
           onClick={() => setActiveTab('budget')}
           className={activeTab === 'budget' ? 'btn-royal-gold' : 'btn-royal-outline'}
           style={{ fontSize: '0.82rem', padding: '8px 14px' }}

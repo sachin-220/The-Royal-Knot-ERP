@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import CockpitView from './components/CockpitView';
+import EnquiriesView from './components/EnquiriesView';
 import BudgetVendorView from './components/BudgetVendorView';
 import OperationsView from './components/OperationsView';
 import GateFinanceView from './components/GateFinanceView';
@@ -124,6 +125,10 @@ export default function App() {
                 founderData={founderData} 
                 dbHealth={dbHealth} 
               />
+            )}
+
+            {activeTab === 'enquiries' && (
+              <EnquiriesView />
             )}
 
             {activeTab === 'budget' && (

@@ -1,0 +1,113 @@
+{
+  "name": "KnotCore_Telegram_Client_Intake_Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "telegram-wedding-intake",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "node-webhook-1",
+      "name": "Telegram Webhook Receiver",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [180, 280]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{ $env.GEMINI_API_KEY }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={\n  \"contents\": [{\n    \"parts\": [{\n      \"text\": \"You are the KnotCore AI Lead Parser. Extract parameters from user message: '\" + $json.body.message.text + \"' with ZERO assumptions. Output JSON with couple_names, preferred_city, guest_count, budget_inr, duration_days, sentiment_score.\"\n    }]\n  }],\n  \"generationConfig\": {\n    \"response_mime_type\": \"application/json\"\n  }\n}"
+      },
+      "id": "node-gemini-2",
+      "name": "Gemini 3.5 Flash Zero-Input Extraction",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [420, 280]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO crm_inquiries (name, phone, telegram_id, preferred_city, guest_count, budget_inr, sentiment_score, recovery_status, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, 'new', CURRENT_TIMESTAMP) RETURNING id, name, preferred_city, guest_count, budget_inr;",
+        "additionalFields": {
+          "queryParams": "={{ [ $json.parsed.couple_names || 'New Prospective Couple', $json.body.message.from.phone || '', '@' + ($json.body.message.from.username || 'client'), $json.parsed.preferred_city || 'Jaipur', $json.parsed.guest_count || 400, $json.parsed.budget_inr || 25000000, $json.parsed.sentiment_score || 0.95 ] }}"
+        }
+      },
+      "id": "node-postgres-3",
+      "name": "PostgreSQL knotcore_db Ingestion",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [680, 280]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"success\",\n  \"inquiry_id\": $json.id,\n  \"message\": \"Enquiry ingested and broadcast to KnotCore Executive Dashboard.\"\n}"
+      },
+      "id": "node-respond-4",
+      "name": "Respond Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [920, 280]
+    }
+  ],
+  "connections": {
+    "Telegram Webhook Receiver": {
+      "main": [
+        [
+          {
+            "node": "Gemini 3.5 Flash Zero-Input Extraction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini 3.5 Flash Zero-Input Extraction": {
+      "main": [
+        [
+          {
+            "node": "PostgreSQL knotcore_db Ingestion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PostgreSQL knotcore_db Ingestion": {
+      "main": [
+        [
+          {
+            "node": "Respond Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

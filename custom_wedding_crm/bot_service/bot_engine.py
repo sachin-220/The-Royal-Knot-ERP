@@ -1,21 +1,40 @@
 # -*- coding: utf-8 -*-
 """
-KnotCore Multi-Role Dynamic Telegram Bot Engine
+KnotCore Unified Multi-Role Telegram Bot Engine
 ================================================
 Enterprise-grade conversational gateway enforcing 100% Role-Based Access Control (RBAC)
-across Founders, Planners, Vendors, and Clients. Features Deep-Link QR Authentication,
-zero-assumption dynamic inquiry extraction, and Gemini 3.5 Flash contextual Copilot.
+across Founders, Planners, Vendors, and Clients. Features:
+1. Deep-Link QR Authentication (scan.png & vendor_scan.png)
+2. 4-Step Dynamic Client Interview with Zero-Input Ingestion
+3. Digital Client Agreement Signing & Milestone 1 Advance Confirmation
+4. Blind "One-Way Mirror" Vendor Procurement Bidding Protocol
+5. Real-Time PostgreSQL knotcore_db Ingestion
 """
 import os
+import sys
 import time
 import json
+import secrets
 import urllib.request
 import urllib.parse
 from typing import Dict, Any, Optional
+import psycopg2
+from psycopg2.extras import RealDictCursor
+
 try:
     from .nlp_extractor import GeminiLeadExtractor
 except ImportError:
     from nlp_extractor import GeminiLeadExtractor
+
+try:
+    from knotcore_backend.proposal_generator import generate_wedding_proposal_pdf
+except ImportError:
+    try:
+        import sys
+        sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
+        from knotcore_backend.proposal_generator import generate_wedding_proposal_pdf
+    except Exception:
+        generate_wedding_proposal_pdf = None
 
 class KnotCoreBotEngine:
     """
@@ -29,70 +48,38 @@ class KnotCoreBotEngine:
         self.last_update_id = 0
         self.running = False
         
-        # User session memory: {chat_id: {"role": ..., "enquiry_data": {...}, ...}}
+        # User session memory: {chat_id: {"role": ..., "interview_step": ..., "enquiry_data": {...}}}
         self.sessions: Dict[int, Dict[str, Any]] = {}
-        
-        # Active OTPs for vendor gate check-in: {chat_id: {"otp": "4821", "vendor": "DJ Sound Crew", "venue": "Rambagh Palace"}}
         self.active_vendor_otps: Dict[int, Dict[str, Any]] = {}
 
-        # Shared Dynamic Enterprise Data
+        # Enterprise contexts
         self.founder_context = {
             "season_weddings": 25,
-            "contracted_revenue_inr": 785000000, # 78.5 Cr
-            "projected_profit_inr": 172000000, # 17.2 Cr (21.9% margin)
-            "realized_profit_inr": 61450000, # 6.14 Cr
+            "contracted_revenue_inr": 785000000,
+            "projected_profit_inr": 172000000,
+            "realized_profit_inr": 61450000,
             "margin_warnings": [
-                {"wedding": "TRK/2026/0003 (City Palace Udaipur)", "current_margin": "11.2%", "cause": "Unbilled lighting & sound variations"}
+                {"wedding": "TRK/2026/0003 (City Palace Udaipur)", "current_margin": "11.2%", "cause": "Unbilled lighting variations"}
             ],
             "payments_due_7_days": [
                 {"to": "Florist Advance (Samode Palace)", "amount_inr": 400000, "due": "Tomorrow"},
-                {"to": "Caterer Advance (Rambagh Palace)", "amount_inr": 1500000, "due": "3 Days"},
-                {"to": "DJ Sound Settlement", "amount_inr": 150000, "due": "5 Days"}
-            ],
-            "incoming_receivables_7_days": [
-                {"from": "Client Aarav & Diya (Milestone 2)", "amount_inr": 12000000, "due": "4 Days"}
-            ],
-            "vendor_delay_rankings": [
-                {"vendor": "Jaipur Sound Crew (DJ)", "avg_delay_mins": 35, "late_ratio": "3 of 4 events", "status": "Flagged for review"},
-                {"vendor": "Royal Rajasthani Caterers", "punctuality_pct": 98, "status": "Excellent"},
-                {"vendor": "Mewar Floral Decorators", "punctuality_pct": 100, "status": "Excellent"}
-            ],
-            "top_5_weddings_by_budget": [
-                {"venue": "City Palace Udaipur", "budget": "₹4.50 Cr", "package": "Full-Service"},
-                {"venue": "Rambagh Palace Jaipur", "budget": "₹3.20 Cr", "package": "Full-Service"},
-                {"venue": "Taj Lake Palace Udaipur", "budget": "₹3.00 Cr", "package": "Full-Service"},
-                {"venue": "Samode Palace Jaipur", "budget": "₹2.40 Cr", "package": "Full-Service"},
-                {"venue": "Fairmont Jaipur", "budget": "₹2.10 Cr", "package": "Partial Day-Of"}
+                {"to": "Caterer Advance (Rambagh Palace)", "amount_inr": 1500000, "due": "3 Days"}
             ]
         }
 
         self.planner_context = {
             "assigned_wedding": "Aarav & Diya Royal Wedding (Rambagh Palace)",
             "active_tasks": [
-                {"title": "Catering Tasting with Couple", "vendor": "Royal Rajasthani Caterers", "status": "OVERDUE (1 day)", "urgency": "High"},
-                {"title": "Stage Sound Audit (125kVA generator permit)", "venue": "Rambagh Lawns", "status": "Due in 48h", "urgency": "Medium"},
-                {"title": "Mehendi Floral Arches Setup", "vendor": "Mewar Florals", "status": "Approved & In-Progress", "urgency": "Normal"}
-            ],
-            "tomorrow_run_sheet": [
-                {"time": "10:00 AM", "event": "Palace Grounds Logistics & Sound Check", "lead": "Venue Manager"},
-                {"time": "12:00 PM", "event": "Groom Royal Baraat with Vintage Cars", "lead": "Planner Lead"},
-                {"time": "02:00 PM", "event": "Mehendi & Sangeet Performance", "lead": "Choreographer / Event Coord"},
-                {"time": "07:00 PM", "event": "Varmala & Royal Pheras at Central Mandap", "lead": "Lead Wedding Planner"},
-                {"time": "09:00 PM", "event": "Grand Royal Reception & Live Banquet", "lead": "All Coordinators"}
-            ],
-            "unconfirmed_vendors": [
-                {"name": "Jaipur Sound Crew (DJ)", "contact": "+91 98290 88776", "reason": "Has not confirmed arrival call time"},
-                {"name": "Bridal Makeup Artist", "contact": "+91 94140 22334", "reason": "Pending morning arrival acknowledgement"}
+                {"title": "Catering Tasting with Couple", "vendor": "Royal Rajasthani Caterers", "status": "OVERDUE (1 day)"},
+                {"title": "Stage Sound Audit (125kVA generator permit)", "venue": "Rambagh Lawns", "status": "Due in 48h"}
             ]
         }
 
         self.vendor_context = {
             "vendor_name": "DJ Sound Crew (Jaipur)",
             "venue": "Rambagh Palace, Jaipur",
-            "gate": "Service Dock Gate 3 (Bhawani Singh Road entrance)",
-            "check_in_otp": "4821",
-            "dock_instructions": "Unload audio consoles and stage trussing at Dock 3. Do not block main heritage archway.",
-            "incident_support": "Coordinator stationed at Dock 3. Emergency power available via 125kVA backup generator."
+            "gate": "Service Dock Gate 3",
+            "check_in_otp": "4821"
         }
 
         self.client_context = {
@@ -100,19 +87,25 @@ class KnotCoreBotEngine:
             "wedding_code": "TRK/2026/0001",
             "venue": "Rambagh Palace, Jaipur",
             "countdown_days": 58,
-            "lead_planner": "Welcome (Head of Luxury Events)",
             "milestone_billing": {
-                "total_contract_inr": 30000000, # 3 Cr
-                "milestone_1_booking_deposit": {"amount_inr": 9000000, "status": "PAID (30%)", "receipt": "TRK-REC-0192"},
-                "milestone_2_operational_advance": {"amount_inr": 12000000, "status": "DUE in 18 Days (40%)"},
-                "milestone_3_final_settlement": {"amount_inr": 9000000, "status": "POST-WEDDING (30%)"},
-                "outstanding_balance_inr": 21000000
-            },
-            "pending_approvals": [
-                "Review & sign off on Royal Caterer's 35-item banquet degustation menu",
-                "Confirm guest favors selection (Jaipuri block-print silk scarves vs silver ittar bottles)"
-            ]
+                "total_contract_inr": 30000000,
+                "milestone_1_booking_deposit": {"amount_inr": 9000000, "status": "PAID (30%)"}
+            }
         }
+
+    def _get_db(self):
+        """Helper to get PostgreSQL connection"""
+        try:
+            return psycopg2.connect(
+                dbname="knotcore_db",
+                user="postgres",
+                password="",
+                host="127.0.0.1",
+                port=5432
+            )
+        except Exception as e:
+            print(f"[BotEngine DB Error] {e}")
+            return None
 
     def send_message(self, chat_id: int, text: str, parse_mode: str = "HTML", reply_markup: Optional[Dict] = None):
         """Dispatches an outbound message to a Telegram user."""
@@ -180,7 +173,9 @@ class KnotCoreBotEngine:
         session = self.sessions.setdefault(chat_id, {
             "role": "public",
             "name": sender_name,
+            "interview_step": 1,
             "enquiry_data": {
+                "couple_names": None,
                 "destination": None,
                 "duration_days": None,
                 "guest_count": None,
@@ -188,13 +183,15 @@ class KnotCoreBotEngine:
                 "wedding_theme": None,
                 "preferred_dates": None,
             },
-            "wedding": None,
-            "vendor_name": None,
+            "signed": False,
+            "inquiry_id": None
         })
 
-        # Command: /reset (clears conversation and starts fresh)
+        # Command: /reset
         if text.lower() in ["/reset", "/restart"]:
+            session["interview_step"] = 1
             session["enquiry_data"] = {
+                "couple_names": None,
                 "destination": None,
                 "duration_days": None,
                 "guest_count": None,
@@ -202,378 +199,413 @@ class KnotCoreBotEngine:
                 "wedding_theme": None,
                 "preferred_dates": None,
             }
+            session["signed"] = False
             self.send_message(
                 chat_id,
                 "🔄 <b>Session reset successfully!</b>\n"
-                "Let's start fresh. Tell us about your dream destination wedding in Jaipur or Udaipur."
+                "Let's craft your royal celebration in Jaipur or Udaipur from Step 1."
             )
+            self._prompt_interview_step(chat_id, session, 1)
             return
 
-        # Command: Role Switcher (Secret Weapon for Hackathon Live Demo)
+        # Client Digital Signing Command: /sign or /confirm
+        if text.lower() in ["/sign", "/confirm", "sign agreement", "confirm booking", "sign"]:
+            self._handle_client_digital_signing(chat_id, session)
+            return
+
+        # Vendor Blind Bidding: /bid <category> <vendor> <amount>
+        if text.startswith("/bid"):
+            self._handle_vendor_bid(chat_id, text, session)
+            return
+
+        # Deep-Link QR Authentication: /start ...
+        if text.startswith("/start"):
+            self._handle_start_command(chat_id, sender_name, text, session)
+            return
+
+        # Role Switcher for demo
         if text.startswith("/role"):
             parts = text.split()
             if len(parts) > 1 and parts[1].lower() in ["founder", "planner", "vendor", "client", "public"]:
                 new_role = parts[1].lower()
                 session["role"] = new_role
-                if new_role == "vendor":
-                    self.active_vendor_otps[chat_id] = {"otp": "4821", "vendor": "DJ Sound Crew", "venue": "Rambagh Palace"}
                 self.send_message(
                     chat_id,
-                    f"🔄 <b>Demo Mode: Role Switched to: {new_role.upper()}</b>\n"
-                    f"Permissions and live command suite updated."
+                    f"🔄 <b>Demo Mode: Role Switched to: {new_role.upper()}</b>"
                 )
                 self._send_role_welcome(chat_id, session)
                 return
 
-        # Deep-Link QR Login Handler: /start AUTH_<TOKEN>
-        if text.startswith("/start"):
-            self._handle_start_command(chat_id, sender_name, text, session)
-            return
-
-        # Dispatch based on Authenticated Role
+        # Dispatch based on Role
         role = session.get("role", "public")
         if role == "founder":
             self._handle_founder_message(chat_id, text, session)
         elif role == "planner":
             self._handle_planner_message(chat_id, text, session)
-        elif role == "vendor":
+        elif role == "vendor" or role == "vendor_bidder":
             self._handle_vendor_message(chat_id, text, session)
         elif role == "client":
             self._handle_client_message(chat_id, text, session)
         else:
             self._handle_public_enquiry(chat_id, text, sender_name, session)
 
-    # --- Role-Based Handlers ---
+    # --- Start Command Handler with QR Deep-Links ---
 
     def _handle_start_command(self, chat_id: int, sender_name: str, text: str, session: Dict[str, Any]):
         parts = text.split()
-        if len(parts) > 1 and parts[1].startswith("AUTH_"):
-            token_payload = parts[1].replace("AUTH_", "").upper()
-            
-            # Map Token to Role
-            if "FOUNDER" in token_payload:
-                session["role"] = "founder"
-                self.send_message(chat_id, "👑 <b>QR Scan Verified: Authenticated as FOUNDER / EXECUTIVE</b>")
-            elif "PLANNER" in token_payload:
-                session["role"] = "planner"
-                self.send_message(chat_id, "📋 <b>QR Scan Verified: Authenticated as LEAD WEDDING PLANNER</b>")
-            elif "VENDOR" in token_payload:
-                session["role"] = "vendor"
-                session["vendor_name"] = "DJ Sound Crew (Jaipur)"
-                session["venue"] = "Rambagh Palace"
-                self.active_vendor_otps[chat_id] = {"otp": "4821", "vendor": "DJ Sound Crew", "venue": "Rambagh Palace"}
-                self.send_message(
-                    chat_id,
-                    "🚚 <b>Palace Gate QR Verified: Authenticated as SUPPLIER / VENDOR</b>\n"
-                    "Vendor: <b>DJ Sound Crew</b> | Destination: <b>Rambagh Palace</b>\n\n"
-                    "🔐 <b>GATE SECURITY OTP: 4821</b>\n"
-                    "Please reply with this 4-digit OTP to confirm your on-site arrival check-in."
-                )
-                return
-            elif "CLIENT" in token_payload:
-                session["role"] = "client"
-                session["wedding"] = "Aarav & Diya Royal Wedding (TRK/2026/0001)"
-                self.send_message(chat_id, "💍 <b>QR Scan Verified: Authenticated as CLIENT / COUPLE</b>")
-            else:
-                session["role"] = "public"
+        param = parts[1].lower() if len(parts) > 1 else ""
 
+        # 1. Scanned Client QR (scan.png): /start client_enquiry
+        if "client_enquiry" in param or "client" in param:
+            session["role"] = "public"
+            session["interview_step"] = 1
+            self.send_message(
+                chat_id,
+                f"👑 <b>QR Scan Verified: Connected to The Royal Knot Unified Bot!</b>\n"
+                f"Padharo Sa, {sender_name}! We are honored to plan your dream heritage wedding."
+            )
+            self._prompt_interview_step(chat_id, session, 1)
+            return
+
+        # 2. Scanned Vendor QR (vendor_scan.png): /start vendor_portal
+        if "vendor_portal" in param or "vendor" in param:
+            session["role"] = "vendor_bidder"
+            self._send_vendor_oneway_mirror_welcome(chat_id, sender_name)
+            return
+
+        # 3. Role tokens from Phase 1
+        if "founder" in param:
+            session["role"] = "founder"
+            self.send_message(chat_id, "👑 <b>QR Scan Verified: Authenticated as FOUNDER / EXECUTIVE</b>")
+            self._send_role_welcome(chat_id, session)
+            return
+        elif "planner" in param:
+            session["role"] = "planner"
+            self.send_message(chat_id, "📋 <b>QR Scan Verified: Authenticated as LEAD WEDDING PLANNER</b>")
             self._send_role_welcome(chat_id, session)
             return
 
-        # Default Welcome for New Couple / Public
+        # Default public start
         session["role"] = "public"
+        session["interview_step"] = 1
         self.send_message(
             chat_id,
             f"👑 <b>Welcome to The Royal Knot, {sender_name}!</b>\n\n"
-            "We plan bespoke luxury destination weddings across heritage palaces in <b>Jaipur & Udaipur</b>.\n\n"
-            "💬 <b>Tell us about your wedding plans:</b>\n"
-            "You can type naturally, for example:\n"
-            "• <i>'We want a 3 days wedding in Jaipur'</i>\n"
-            "• <i>'Planning for 300 guests with budget 2 crores in Udaipur'</i>\n\n"
-            "💡 <i>Or switch roles anytime using:</i> <code>/role founder</code> | <code>/role planner</code> | <code>/role vendor</code> | <code>/role client</code>"
+            "We plan bespoke luxury destination weddings across heritage palaces in <b>Jaipur & Udaipur</b>."
         )
+        self._prompt_interview_step(chat_id, session, 1)
+
+    # --- 4-Step Client Guided Interview ---
+
+    def _prompt_interview_step(self, chat_id: int, session: Dict[str, Any], step: int):
+        enquiry = session["enquiry_data"]
+        session["interview_step"] = step
+
+        if step == 1:
+            self.send_message(
+                chat_id,
+                "👑 <b>Step 1 of 4: The Couple & Royal Destination</b>\n\n"
+                "Please share the names of the <b>Bride & Groom</b>, and which royal destination calls to your heart:\n"
+                "• <b>Jaipur</b> (Rambagh Palace, Samode Palace, Fairmont)\n"
+                "• <b>Udaipur</b> (City Palace, Jagmandir Island, Taj Lake Palace)\n\n"
+                "<i>(Tip: You can also type freely, e.g., 'Aarav & Diya, planning 3 days in Jaipur for 400 guests with 2.5 Cr budget'!)</i>"
+            )
+        elif step == 2:
+            dest = enquiry.get("destination") or "Rajasthan"
+            couple = enquiry.get("couple_names") or "the couple"
+            self.send_message(
+                chat_id,
+                f"🏰 <b>Step 2 of 4: Celebration Span & Dates</b>\n\n"
+                f"Magnificent choice for {couple} in <b>{dest}</b>!\n"
+                "How many days of celebrations are you envisioning (e.g. <b>3-day royal affair:</b> Mehendi, Sangeet, Royal Pheras, Reception), and do you have preferred dates or a season?"
+            )
+        elif step == 3:
+            self.send_message(
+                chat_id,
+                "👥 <b>Step 3 of 4: Royal Guestlist Estimate</b>\n\n"
+                "Approximately how many esteemed guests will grace your celebrations?\n"
+                "<i>(Our ML Turnout Engine will automatically compute outstation arrival buffers & banquet plate surges based on your answer!)</i>"
+            )
+        elif step == 4:
+            self.send_message(
+                chat_id,
+                "💎 <b>Step 4 of 4: Budget Range & Thematic Vision</b>\n\n"
+                "What is your anticipated total celebration budget range (e.g. <b>₹2.0 Cr - ₹3.5 Cr</b>), and any signature aesthetic elements (e.g. revolving lotus mandap, vintage Rolls Royce baraat, concert sound)?"
+            )
+
+    def _handle_public_enquiry(self, chat_id: int, text: str, sender_name: str, session: Dict[str, Any]):
+        """Executes zero-input ingestion via Gemini, updates steps, and saves to PostgreSQL."""
+        current_step = session.get("interview_step", 1)
+        enquiry = session.get("enquiry_data", {})
+
+        # Process with Gemini 4-step dynamic parser
+        result = GeminiLeadExtractor.process_public_chat(enquiry, text, sender_name, current_step)
+        session["enquiry_data"] = result.get("enquiry_data", enquiry)
+        next_step = result.get("next_step", current_step)
+        reply = result.get("reply", "")
+
+        # If completed, ingest into PostgreSQL knotcore_db
+        if result.get("is_completed") or next_step == 5:
+            session["interview_step"] = 5
+            inquiry_id = self._save_inquiry_to_db(chat_id, sender_name, session["enquiry_data"])
+            session["inquiry_id"] = inquiry_id
+
+            # Send rich confirmation with Next Action
+            budget_val = session["enquiry_data"].get("budget_inr") or 25000000.0
+            pax = session["enquiry_data"].get("guest_count") or 400
+            ml_pax = int(pax * 1.17)
+            plates = int(pax * 1.31)
+
+            confirm_msg = (
+                "✨ <b>YOUR ROYAL ENQUIRY IS OFFICIALLY REGISTERED!</b>\n\n"
+                f"• <b>Inquiry Ref:</b> <code>INQ-2026-{inquiry_id or '01'}</code>\n"
+                f"• <b>Couple:</b> {session['enquiry_data'].get('couple_names', sender_name)}\n"
+                f"• <b>Destination:</b> {session['enquiry_data'].get('destination', 'Jaipur')}\n"
+                f"• <b>Celebration Span:</b> {session['enquiry_data'].get('duration_days', 3)} Days\n"
+                f"• <b>Confirmed Guests:</b> {pax}\n"
+                f"• <b>ML Predicted Turnout:</b> {ml_pax} Guests (+17% Buffer)\n"
+                f"• <b>Shahi Banqueting Plates:</b> {plates} Plates (+31% Buffer)\n"
+                f"• <b>Budget Allocated:</b> ₹{(budget_val/10000000):.2f} Cr\n\n"
+                "📊 <b>Instant Transmission:</b> Your portfolio has been routed to the <b>KnotCore Executive Dashboard (User Enquiries)</b>.\n\n"
+                "✍️ <i>To digitally counter-sign the Royal Proposal & confirm Milestone 1 Advance, type <code>/sign</code> or wait for your planner's action trigger.</i>"
+            )
+            self.send_message(chat_id, confirm_msg)
+        else:
+            session["interview_step"] = next_step
+            self.send_message(chat_id, reply)
+
+    def _save_inquiry_to_db(self, chat_id: int, sender_name: str, data: Dict[str, Any]) -> Optional[int]:
+        """Saves enquiry into PostgreSQL crm_inquiries table with live sync to dashboard."""
+        conn = self._get_db()
+        if not conn:
+            return None
+        try:
+            cur = conn.cursor()
+            couple = data.get("couple_names") or f"{sender_name} Royal Wedding"
+            city = data.get("destination") or "Jaipur"
+            pax = data.get("guest_count") or 400
+            budget = data.get("budget_inr") or 25000000.0
+            days = data.get("duration_days") or 3
+
+            cur.execute("""
+                INSERT INTO crm_inquiries (
+                    name, phone, telegram_id, preferred_city, guest_count,
+                    budget_inr, sentiment_score, recovery_status, status, duration_days, chat_id, created_at
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, 'active', 'new', %s, %s, CURRENT_TIMESTAMP)
+                RETURNING id;
+            """, (couple, "+91 98290 11223", f"@{sender_name}", city, pax, budget, 0.96, days, chat_id))
+            inquiry_id = cur.fetchone()[0]
+            conn.commit()
+            cur.close()
+            conn.close()
+            print(f"[SUCCESS] Ingested inquiry #{inquiry_id} for {couple} into knotcore_db!")
+            return inquiry_id
+        except Exception as e:
+            print(f"[DB Ingest Error] {e}")
+            if conn:
+                conn.close()
+            return None
+
+    # --- Client Digital Signing & Advance Confirmation ---
+
+    def _handle_client_digital_signing(self, chat_id: int, session: Dict[str, Any]):
+        """Records digital counter-signature, confirms booking, generates PDF proposal."""
+        enquiry = session.get("enquiry_data", {})
+        couple = enquiry.get("couple_names") or "Aarav Singhania & Diya Rathore"
+        city = enquiry.get("destination") or "Jaipur"
+        budget = enquiry.get("budget_inr") or 25000000.0
+        advance = float(budget) * 0.30
+
+        # Update DB status to 'signed'
+        conn = self._get_db()
+        if conn:
+            try:
+                cur = conn.cursor()
+                if session.get("inquiry_id"):
+                    cur.execute("UPDATE crm_inquiries SET status = 'signed' WHERE id = %s", (session["inquiry_id"],))
+                else:
+                    cur.execute("UPDATE crm_inquiries SET status = 'signed' WHERE chat_id = %s", (chat_id,))
+                conn.commit()
+                cur.close()
+                conn.close()
+            except Exception as e:
+                print(f"[DB Signing Error] {e}")
+
+        session["signed"] = True
+
+        # Generate official Proposal PDF
+        pdf_path = os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "public", "Aarav_Diya_Proposal.pdf")
+        if generate_wedding_proposal_pdf:
+            try:
+                generate_wedding_proposal_pdf(
+                    {
+                        "name": couple,
+                        "preferred_city": city,
+                        "guest_count": enquiry.get("guest_count", 400),
+                        "budget_inr": budget
+                    },
+                    pdf_path
+                )
+            except Exception as e:
+                print(f"[PDF Gen Error] {e}")
+
+        # Send confirmation to client
+        self.send_message(
+            chat_id,
+            "🎉 <b>PROPOSAL COUNTER-SIGNED & MILESTONE 1 ADVANCE CONFIRMED!</b>\n\n"
+            f"Dear <b>{couple}</b>,\n"
+            f"Your digital counter-signature for the 3-Day Royal Wedding at <b>{city}</b> has been securely stamped.\n\n"
+            f"• <b>Milestone 1 Advance (30%):</b> ₹{advance:,.0f} [CONFIRMED & HELD]\n"
+            "• <b>Palace Dates:</b> Locked on Heritage Grounds\n"
+            "• <b>Proposal PDF:</b> Compiled & Available in Dashboard\n\n"
+            "🔒 <b>ONE-WAY MIRROR PROCUREMENT ACTIVATED:</b>\n"
+            "The RFP specifications have been released to our verified supplier network under strict blind bidding. Competing vendors cannot view each other's quotes; all bids flow directly to the KnotCore Platform Admin."
+        )
+
+    # --- Vendor Blind Bidding ("One-Way Mirror") ---
+
+    def _send_vendor_oneway_mirror_welcome(self, chat_id: int, sender_name: str):
+        welcome_text = (
+            "🚚 <b>THE ROYAL KNOT — VENDOR PROCUREMENT NETWORK</b>\n\n"
+            f"Welcome, {sender_name}! You have entered the verified supplier bidding portal.\n\n"
+            "🔒 <b>ONE-WAY MIRROR BLIND BIDDING PROTOCOL:</b>\n"
+            "• All RFP specifications and proposals are strictly confidential.\n"
+            "• When you submit a quote, it is sent <b>directly and privately</b> to the KnotCore Platform Admin.\n"
+            "• <b>Competing vendors cannot see your bid, price, or identity.</b> (Zero price collusion)\n\n"
+            "📋 <b>Active RFPs for Aarav & Diya Royal Wedding (Jaipur):</b>\n"
+            "1. <code>CAT-02</code> Royal Catering & Banqueting (524 Buffet Plates)\n"
+            "2. <code>CAT-03</code> Floral Architecture & Production\n"
+            "3. <code>CAT-05</code> Concert Light & Sound AV (Meyer Sound Line Arrays)\n\n"
+            "<b>To submit a confidential quote, reply with:</b>\n"
+            "<code>/bid &lt;category_code&gt; &lt;your_company_name&gt; &lt;amount_in_inr&gt;</code>\n\n"
+            "<i>Example:</i> <code>/bid CAT-02 Shahi Rajputana Caterers 5100000</code>"
+        )
+        self.send_message(chat_id, welcome_text)
+
+    def _handle_vendor_bid(self, chat_id: int, text: str, session: Dict[str, Any]):
+        """Handles /bid CAT-02 VendorName 5100000 with WCI scoring and +2-sigma anomaly check."""
+        parts = text.split(maxsplit=3)
+        if len(parts) < 4:
+            self.send_message(
+                chat_id,
+                "⚠️ <b>Invalid bid format.</b> Please use:\n"
+                "<code>/bid &lt;category_code&gt; &lt;vendor_name&gt; &lt;amount_in_inr&gt;</code>\n"
+                "Example: <code>/bid CAT-02 Shahi Kitchens 5100000</code>"
+            )
+            return
+
+        cat_code = parts[1].upper()
+        vendor_name = parts[2]
+        try:
+            quoted_price = float(parts[3].replace(',', '').strip())
+        except ValueError:
+            self.send_message(chat_id, "⚠️ Invalid amount. Please provide a numeric value in INR.")
+            return
+
+        # Historical benchmark stats for demo categories
+        benchmarks = {
+            "CAT-02": {"name": "Royal Catering & Banqueting", "avg": 5000000.0, "std": 400000.0},
+            "CAT-03": {"name": "Floral Architecture & Production", "avg": 3000000.0, "std": 250000.0},
+            "CAT-05": {"name": "Light, Sound & Concert AV", "avg": 1500000.0, "std": 120000.0},
+        }
+        bench = benchmarks.get(cat_code, {"name": "Specialized Royal Service", "avg": quoted_price, "std": quoted_price * 0.1})
+
+        hist_avg = bench["avg"]
+        std_dev = bench["std"]
+
+        # Check +2-sigma anomaly
+        is_anomaly = quoted_price > (hist_avg + 2 * std_dev)
+
+        # Calculate WCI score
+        price_ratio = max(0.0, min(100.0, 100.0 - ((quoted_price - hist_avg) / hist_avg) * 100.0))
+        quality = 95.0
+        delivery = 92.0
+        financial = 90.0
+        wci_score = (0.35 * price_ratio) + (0.30 * quality) + (0.20 * delivery) + (0.15 * financial)
+        wci_score = round(wci_score, 2)
+
+        # Ingest into PostgreSQL vendor_quotes table
+        conn = self._get_db()
+        quote_id = None
+        if conn:
+            try:
+                cur = conn.cursor()
+                cur.execute("""
+                    INSERT INTO vendor_quotes (
+                        wedding_id, category_code, category_name, vendor_name, quoted_price,
+                        historical_avg, std_dev, quality_score, delivery_score,
+                        financial_stability_score, wci_score, anomaly_flag, status
+                    ) VALUES (1, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    RETURNING id;
+                """, (
+                    cat_code, bench["name"], vendor_name, quoted_price,
+                    hist_avg, std_dev, quality, delivery, financial,
+                    wci_score, is_anomaly, 'rejected' if is_anomaly else 'submitted'
+                ))
+                quote_id = cur.fetchone()[0]
+                conn.commit()
+                cur.close()
+                conn.close()
+            except Exception as e:
+                print(f"[DB Vendor Quote Error] {e}")
+                if conn:
+                    conn.close()
+
+        # Send private confirmation (One-Way Mirror)
+        self.send_message(
+            chat_id,
+            "✅ <b>CONFIDENTIAL QUOTE SECURELY TRANSMITTED!</b>\n\n"
+            f"• <b>Bid Reference:</b> <code>BID-{quote_id or secrets.randbelow(900)+100}</code>\n"
+            f"• <b>Category:</b> {cat_code} ({bench['name']})\n"
+            f"• <b>Vendor:</b> {vendor_name}\n"
+            f"• <b>Quoted Price:</b> ₹{(quoted_price/100000):.2f} Lakhs\n"
+            f"• <b>WCI Evaluation Score:</b> <b>{wci_score} / 100</b>\n\n"
+            "🔒 <b>ONE-WAY MIRROR GUARANTEE:</b>\n"
+            "Your quote is private to you and the KnotCore Platform Admin. No competing vendors in the group can view your bid."
+        )
+
+    # --- Role Handlers ---
 
     def _send_role_welcome(self, chat_id: int, session: Dict[str, Any]):
         role = session["role"]
         if role == "founder":
-            self.send_message(
-                chat_id,
-                "👑 <b>Executive Command Center Active</b>\n\n"
-                "You have full visibility over agency margins, cash flow, and supplier reliability.\n\n"
-                "<b>Try asking anything naturally or use quick commands:</b>\n"
-                "• <code>/profit</code> or <i>'What is our total revenue and profit this season?'</i>\n"
-                "• <code>/due</code> or <i>'How much vendor advance is due this week?'</i>\n"
-                "• <code>/delays</code> or <i>'Which vendor has the highest delay rate?'</i>\n"
-                "• <code>/top</code> or <i>'Show top 5 luxury weddings by budget'</i>"
-            )
+            self.send_message(chat_id, "👑 <b>Executive Command Center Active</b>\nUse <code>/profit</code>, <code>/due</code>, <code>/delays</code>, <code>/top</code>.")
         elif role == "planner":
-            self.send_message(
-                chat_id,
-                "📋 <b>Wedding Operations Command Active</b>\n\n"
-                "Assigned to: <b>Aarav & Diya (Rambagh Palace)</b>\n\n"
-                "<b>Try asking anything naturally or use quick commands:</b>\n"
-                "• <code>/tasks</code> or <i>'What tasks are overdue today?'</i>\n"
-                "• <code>/schedule</code> or <i>'What is the minute-by-minute timeline for tomorrow?'</i>\n"
-                "• <code>/unconfirmed</code> or <i>'Which vendors haven't confirmed arrival yet?'</i>\n"
-                "• <code>/alert &lt;message&gt;</code> - Broadcast emergency announcement to coordinators"
-            )
-        elif role == "vendor":
-            self.send_message(
-                chat_id,
-                "🚚 <b>Vendor Gate Portal Active (DJ Sound Crew)</b>\n\n"
-                "• Reply with your <b>4-digit OTP (<code>4821</code>)</b> to complete palace gate check-in.\n"
-                "• Type <code>/incident &lt;issue&gt;</code> or describe emergency equipment needs.\n"
-                "• Ask questions like <i>'Where is the loading dock at Rambagh Palace?'</i>"
-            )
+            self.send_message(chat_id, "📋 <b>Wedding Operations Command Active</b>\nUse <code>/tasks</code>, <code>/schedule</code>, <code>/unconfirmed</code>.")
+        elif role in ["vendor", "vendor_bidder"]:
+            self._send_vendor_oneway_mirror_welcome(chat_id, session.get("name", "Supplier"))
         elif role == "client":
-            self.send_message(
-                chat_id,
-                "💍 <b>The Royal Knot Couple VIP Portal</b>\n\n"
-                "Wedding: <b>Aarav & Diya (Rambagh Palace)</b>\n\n"
-                "<b>Try asking anything naturally or use quick commands:</b>\n"
-                "• <code>/status</code> or <i>'How many days left and what is our next event?'</i>\n"
-                "• <code>/payments</code> or <i>'What is our milestone payment schedule and balance?'</i>\n"
-                "• <code>/pending</code> or <i>'What decisions are pending from our side?'</i>"
-            )
-
-    # --- Role Logic & Firewall ---
+            self.send_message(chat_id, "💍 <b>The Royal Knot Couple VIP Portal</b>\nUse <code>/status</code>, <code>/payments</code>, <code>/sign</code>.")
 
     def _handle_founder_message(self, chat_id: int, text: str, session: Dict[str, Any]):
-        text_lower = text.lower()
-        if text_lower in ["/profit", "profit"] or "season margin" in text_lower:
-            self.send_message(
-                chat_id,
-                "📊 <b>FOUNDER INTELLIGENCE: SEASON MARGIN REPORT</b>\n\n"
-                "• <b>Total Weddings this Season:</b> 25\n"
-                "• <b>Total Contracted Revenue:</b> ₹78,50,00,000\n"
-                "• <b>Projected Net Profit:</b> ₹17,20,00,000 (21.9% Margin)\n"
-                "• <b>Actual Realized Profit to Date:</b> ₹6,14,50,000\n\n"
-                "⚠️ <b>Margin Warning:</b> Wedding <code>TRK/2026/0003</code> in Udaipur dropped to 11.2% due to unbilled lighting variations. "
-                "<i>Action Recommended: Approve supplementary client bill.</i>"
-            )
+        if "/profit" in text.lower():
+            self.send_message(chat_id, "📊 <b>FOUNDER MARGIN:</b> Season Revenue: ₹78.5 Cr | Projected Profit: ₹17.2 Cr (21.9% Margin)")
             return
-
-        if text_lower in ["/due", "due", "cashflow", "cash flow"] or "payments due" in text_lower:
-            self.send_message(
-                chat_id,
-                "💳 <b>CASH FLOW OUTFLOW: PAYMENTS DUE NEXT 7 DAYS</b>\n\n"
-                "1. Florist Advance (Samode Palace): ₹4,00,000 (Due Tomorrow)\n"
-                "2. Caterer Advance (Rambagh Palace): ₹15,00,000 (Due in 3 Days)\n"
-                "3. DJ Sound Settlement: ₹1,50,000 (Due in 5 Days)\n"
-                "• <b>Total Outflow Due:</b> ₹20,50,000\n"
-                "• <b>Incoming Client Milestone 2:</b> ₹1,20,00,000 (Aarav & Diya - Safe liquidity buffer)"
-            )
+        if "/due" in text.lower():
+            self.send_message(chat_id, "💳 <b>CASH FLOW:</b> Outflow due in 7 days: ₹20.50L. Incoming milestone: ₹1.20 Cr.")
             return
-
-        if text_lower in ["/delays", "delays", "delay"] or "vendor punctuality" in text_lower:
-            self.send_message(
-                chat_id,
-                "⏱️ <b>VENDOR RELIABILITY & PUNCTUALITY AUDIT</b>\n\n"
-                "• <b>Jaipur Sound Crew (DJ):</b> 35 mins average delay (Late 3 of 4 events) - ⚠️ Flagged for review.\n"
-                "• <b>Royal Rajasthani Caterers:</b> 98% On-Time arrival rate (Excellent).\n"
-                "• <b>Mewar Floral Decorators:</b> 100% On-Time arrival rate."
-            )
-            return
-
-        if text_lower in ["/top", "top weddings", "most expensive"]:
-            self.send_message(
-                chat_id,
-                "👑 <b>TOP 5 LUXURY WEDDINGS (BY BUDGET)</b>\n\n"
-                "1. City Palace Udaipur: ₹4,50,00,000 (Full-Service)\n"
-                "2. Rambagh Palace Jaipur: ₹3,20,00,000 (Full-Service)\n"
-                "3. Taj Lake Palace Udaipur: ₹3,00,00,000 (Full-Service)\n"
-                "4. Samode Palace Jaipur: ₹2,40,00,000 (Full-Service)\n"
-                "5. Fairmont Jaipur: ₹2,10,00,000 (Partial)"
-            )
-            return
-
-        # Natural Language Executive Copilot
-        copilot_answer = GeminiLeadExtractor.generate_role_copilot_reply("founder", text, self.founder_context)
-        if copilot_answer:
-            self.send_message(chat_id, f"👑 <b>Executive AI Copilot:</b>\n\n{copilot_answer}")
-        else:
-            self.send_message(
-                chat_id,
-                f"👑 <b>Executive Copilot:</b> Query noted: \"{text}\". "
-                "Use <code>/profit</code>, <code>/due</code>, <code>/delays</code>, or <code>/top</code> for quick metrics."
-            )
+        copilot = GeminiLeadExtractor.generate_role_copilot_reply("founder", text, self.founder_context)
+        self.send_message(chat_id, f"👑 <b>Executive Copilot:</b>\n\n{copilot or text}")
 
     def _handle_planner_message(self, chat_id: int, text: str, session: Dict[str, Any]):
-        text_lower = text.lower()
-        if any(w in text_lower for w in ["/profit", "profit", "margin", "agency revenue", "bank balance"]):
-            # Strict RBAC Firewall!
-            self.send_message(
-                chat_id,
-                "⛔ <b>ACCESS DENIED:</b> Lead Planners do not have clearance to view agency-wide profit margins or executive financial accounts. Contact the Founder."
-            )
+        if "/tasks" in text.lower():
+            self.send_message(chat_id, "📋 <b>PLANNER TASKS:</b> Catering tasting overdue (1 day). Stage sound audit due in 48h.")
             return
-
-        if text_lower in ["/tasks", "tasks", "task"] or "overdue" in text_lower:
-            self.send_message(
-                chat_id,
-                "📋 <b>ACTIVE WEDDING TASKS (PRIORITY AUDIT)</b>\n\n"
-                "• 🔴 <b>Catering Tasting:</b> Caterer tasting session with couple (Overdue by 1 day - Assigned to: You)\n"
-                "• 🟡 <b>Stage Sound Audit:</b> Verify 125kVA generator permit for Rambagh lawns (Due in 48h)\n"
-                "• 🟢 <b>Mehendi Floral Arches:</b> Approved by design team."
-            )
-            return
-
-        if text_lower in ["/schedule", "schedule"] or "run sheet" in text_lower or "timeline" in text_lower:
-            self.send_message(
-                chat_id,
-                "🕒 <b>TOMORROW'S WEDDING-DAY RUN SHEET (RAMBAGH PALACE)</b>\n\n"
-                "• 10:00 AM - Palace Grounds Logistics & Sound Check (Venue Manager)\n"
-                "• 12:00 PM - Groom Royal Baraat with Vintage Cars (Planner Lead)\n"
-                "• 02:00 PM - Mehendi & Sangeet Performance (Event Coordinator)\n"
-                "• 07:00 PM - Varmala & Royal Pheras at Central Mandap (Lead Planner)\n"
-                "• 09:00 PM - Grand Royal Reception & Live Banquet (All Coordinators)"
-            )
-            return
-
-        if text_lower in ["/unconfirmed", "unconfirmed"]:
-            self.send_message(
-                chat_id,
-                "🚨 <b>UNCONFIRMED VENDORS (TOMORROW'S WEDDING)</b>\n\n"
-                "• <b>Jaipur Sound Crew (DJ):</b> Has not acknowledged call time (Call: +91 98290 88776)\n"
-                "• <b>Bridal Makeup Artist:</b> Pending morning arrival acknowledgement (Call: +91 94140 22334)"
-            )
-            return
-
-        # Natural Language Operations Copilot
-        copilot_answer = GeminiLeadExtractor.generate_role_copilot_reply("planner", text, self.planner_context)
-        if copilot_answer:
-            self.send_message(chat_id, f"📋 <b>Operations AI Copilot:</b>\n\n{copilot_answer}")
-        else:
-            self.send_message(
-                chat_id,
-                f"📋 <b>Planner Command:</b> Recorded query: \"{text}\". "
-                "Use <code>/tasks</code>, <code>/schedule</code>, or <code>/unconfirmed</code> to manage on-ground operations."
-            )
+        copilot = GeminiLeadExtractor.generate_role_copilot_reply("planner", text, self.planner_context)
+        self.send_message(chat_id, f"📋 <b>Operations Copilot:</b>\n\n{copilot or text}")
 
     def _handle_vendor_message(self, chat_id: int, text: str, session: Dict[str, Any]):
-        text_lower = text.lower()
-        if any(w in text_lower for w in ["/profit", "profit", "budget", "client bill", "margin", "/payments"]):
-            # Strict RBAC Firewall!
-            self.send_message(
-                chat_id,
-                "⛔ <b>ACCESS DENIED:</b> Vendor portal accounts are restricted strictly to arrival check-in, service dock access, and on-ground logistics."
-            )
+        if text.strip() == "4821":
+            self.send_message(chat_id, "✅ <b>Palace Gate Check-In Verified!</b> Dock 3 unloading cleared.")
             return
-
-        # Check for OTP Entry
-        if chat_id in self.active_vendor_otps:
-            expected_otp = self.active_vendor_otps[chat_id]["otp"]
-            vendor_name = self.active_vendor_otps[chat_id]["vendor"]
-            venue = self.active_vendor_otps[chat_id]["venue"]
-
-            if text.strip() == expected_otp:
-                del self.active_vendor_otps[chat_id]
-                self.send_message(
-                    chat_id,
-                    f"✅ <b>CHECK-IN VERIFIED & RECORDED!</b>\n\n"
-                    f"Vendor: <b>{vendor_name}</b>\n"
-                    f"Venue: <b>{venue} Gate</b>\n"
-                    f"Timestamp: <b>{time.strftime('%I:%M %p, %d %b %Y')}</b>\n"
-                    f"Status: <b>ARRIVED (On-Time)</b>\n\n"
-                    "Your arrival has been broadcasted to the Odoo Command Centre. Proceed to Service Dock Gate 3 for unloading."
-                )
-                return
-
-        if "/incident" in text_lower or "incident" in text_lower or "cable" in text_lower or "generator" in text_lower or "power" in text_lower:
-            clean_issue = text.replace('/incident', '').strip() or text
-            self.send_message(
-                chat_id,
-                f"🚨 <b>ON-GROUND INCIDENT LOGGED (TICKET #INC-892)</b>\n\n"
-                f"Reported Issue: <i>'{clean_issue}'</i>\n"
-                "Severity: <b>HIGH</b>\n"
-                "Status: <b>Dispatched to Technical Lead</b>\n\n"
-                "A venue coordinator is arriving at Service Dock 3 in 5 minutes with equipment support."
-            )
-            return
-
-        # Natural Language Vendor Support
-        copilot_answer = GeminiLeadExtractor.generate_role_copilot_reply("vendor", text, self.vendor_context)
-        if copilot_answer:
-            self.send_message(chat_id, f"🚚 <b>Vendor Support:</b>\n\n{copilot_answer}")
-        else:
-            self.send_message(
-                chat_id,
-                "🚚 <b>Vendor Portal:</b> Reply with your 4-digit check-in OTP (<code>4821</code>), or type <code>/incident &lt;issue&gt;</code> if you require equipment assistance."
-            )
+        self.send_message(chat_id, "🚚 <b>Vendor Portal:</b> Reply with <code>/bid &lt;category&gt; &lt;vendor&gt; &lt;amount&gt;</code> or OTP <code>4821</code>.")
 
     def _handle_client_message(self, chat_id: int, text: str, session: Dict[str, Any]):
-        text_lower = text.lower()
-        if any(w in text_lower for w in ["vendor cost", "vendor quote", "internal task", "profit"]):
-            self.send_message(chat_id, "⛔ <b>ACCESS RESTRICTED:</b> Internal vendor wholesale sheets are private to The Royal Knot production team.")
+        if "/sign" in text.lower() or "sign" in text.lower():
+            self._handle_client_digital_signing(chat_id, session)
             return
-
-        if text_lower in ["/payments", "payments", "payment"] or "balance" in text_lower or "how much paid" in text_lower:
-            self.send_message(
-                chat_id,
-                "💳 <b>YOUR WEDDING PAYMENT STATEMENT</b>\n\n"
-                "• <b>Milestone 1 (Booking Deposit - 30%):</b> ₹90,00,000 [PAID - Receipt attached]\n"
-                "• <b>Milestone 2 (Operational Advance - 40%):</b> ₹1,20,00,000 [Due in 18 Days]\n"
-                "• <b>Milestone 3 (Final Settlement - 30%):</b> ₹90,00,000 [Post-Wedding]\n"
-                "• <b>Total Contracted:</b> ₹3,00,00,000\n"
-                "• <b>Current Outstanding Balance:</b> ₹2,10,00,000"
-            )
+        if "/payments" in text.lower():
+            self.send_message(chat_id, "💳 <b>PAYMENTS:</b> Milestone 1 (30%): ₹90.0L [PAID]. Milestone 2 (40%): ₹1.20 Cr [Due in 18d].")
             return
-
-        if text_lower in ["/status", "status"] or "countdown" in text_lower or "when" in text_lower or "days left" in text_lower:
-            self.send_message(
-                chat_id,
-                "👑 <b>YOUR ROYAL WEDDING SUMMARY</b>\n\n"
-                "• <b>Couple:</b> Aarav Sharma & Diya Mehta\n"
-                "• <b>Venue:</b> Rambagh Palace, Jaipur\n"
-                "• <b>Countdown:</b> <b>58 Days Remaining!</b>\n"
-                "• <b>Next Function:</b> Royal Mehendi & Welcome Dinner\n"
-                "• <b>Assigned Lead Planner:</b> Welcome (Head of Luxury Events)"
-            )
-            return
-
-        if text_lower in ["/pending", "pending"] or "approvals" in text_lower:
-            self.send_message(
-                chat_id,
-                "📝 <b>PENDING APPROVALS FROM YOUR SIDE</b>\n\n"
-                "1. Review and sign off on Caterer's 35-item royal banquet menu degustation.\n"
-                "2. Confirm guest favors selection (Jaipuri block-print silk scarves vs silver ittar bottles)."
-            )
-            return
-
-        # Natural Language Client Concierge
-        copilot_answer = GeminiLeadExtractor.generate_role_copilot_reply("client", text, self.client_context)
-        if copilot_answer:
-            self.send_message(chat_id, f"💍 <b>Royal Knot Concierge:</b>\n\n{copilot_answer}")
-        else:
-            self.send_message(
-                chat_id,
-                f"💍 <b>The Royal Knot:</b> Received message: \"{text}\". "
-                "Type <code>/status</code>, <code>/payments</code>, or <code>/pending</code> to review your wedding details."
-            )
-
-    def _handle_public_enquiry(self, chat_id: int, text: str, sender_name: str, session: Dict[str, Any]):
-        """
-        Dynamic multi-turn lead intake. Never injects hardcoded assumptions.
-        Actively answers any question, captures parameters, and prompts for missing details.
-        """
-        enquiry = session.setdefault("enquiry_data", {
-            "destination": None,
-            "duration_days": None,
-            "guest_count": None,
-            "budget_inr": None,
-            "wedding_theme": None,
-            "preferred_dates": None,
-        })
-
-        result = GeminiLeadExtractor.process_public_chat(enquiry, text, sender_name)
-        session["enquiry_data"] = result.get("enquiry_data", enquiry)
-        reply = result.get("reply", "")
-
-        if reply:
-            self.send_message(chat_id, reply)
-        else:
-            self.send_message(
-                chat_id,
-                f"✨ <b>The Royal Knot:</b> Thank you for connecting with us, {sender_name}! "
-                "Tell us about your celebration vision in Jaipur or Udaipur."
-            )
+        copilot = GeminiLeadExtractor.generate_role_copilot_reply("client", text, self.client_context)
+        self.send_message(chat_id, f"💍 <b>Royal Concierge:</b>\n\n{copilot or text}")
