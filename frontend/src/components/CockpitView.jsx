@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   TrendingUp, Users, DollarSign, Calendar, MapPin, 
   Sparkles, CheckCircle2, AlertCircle, ArrowUpRight, BarChart3, Database,
@@ -6,62 +6,120 @@ import {
   Check, Clock, MessageSquare, ArrowRight, UserPlus
 } from 'lucide-react';
 
+// Catmull-Rom smooth bezier path generator guaranteeing every point is on the curve
+function generateSmoothPaths(pts) {
+  if (!pts || pts.length === 0) return { line: '', area: '' };
+  const first = pts[0];
+  const last = pts[pts.length - 1];
+  
+  let line = `M 0 ${first.y} L ${first.x} ${first.y}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = i > 0 ? pts[i - 1] : pts[0];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = i < pts.length - 2 ? pts[i + 2] : p2;
+
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+    line += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x} ${p2.y}`;
+  }
+  line += ` L 700 ${last.y}`;
+  const area = `${line} L 700 180 L 0 180 Z`;
+  return { line, area };
+}
+
+// Master timeline datasets with discrete points for real-time hover interactivity
+const rawTimelineData = {
+  '7D': {
+    label: 'the last 7 days',
+    totalRevenue: '₹14,250,000',
+    growthRate: '+18.2%',
+    defaultIndex: 4,
+    points: [
+      { x: 40,  y: 168, date: 'Oct 25, 2026', value: '₹1,420,000', growth: '+5.2%' },
+      { x: 140, y: 156, date: 'Oct 26, 2026', value: '₹1,980,000', growth: '+8.1%' },
+      { x: 245, y: 132, date: 'Oct 27, 2026', value: '₹2,640,000', growth: '+10.4%' },
+      { x: 350, y: 114, date: 'Oct 28, 2026', value: '₹3,150,000', growth: '+12.8%' },
+      { x: 450, y: 92,  date: 'Oct 29, 2026', value: '₹3,850,000', growth: '+14.6%' },
+      { x: 555, y: 68,  date: 'Oct 30, 2026', value: '₹4,320,000', growth: '+16.5%' },
+      { x: 660, y: 46,  date: 'Oct 31, 2026', value: '₹4,890,000', growth: '+18.2%' },
+    ],
+    xLabels: ['Oct 25', 'Oct 26', 'Oct 27', 'Oct 28', 'Oct 29', 'Oct 30', 'Oct 31']
+  },
+  '30D': {
+    label: 'the last 30 days',
+    totalRevenue: '₹68,500,000',
+    growthRate: '+12.8%',
+    defaultIndex: 4,
+    points: [
+      { x: 30,  y: 160, date: 'Nov 14, 2026', value: '₹8,450,000',  growth: '+6.5%' },
+      { x: 110, y: 145, date: 'Nov 17, 2026', value: '₹11,200,000', growth: '+7.8%' },
+      { x: 190, y: 132, date: 'Nov 20, 2026', value: '₹14,900,000', growth: '+9.4%' },
+      { x: 270, y: 118, date: 'Nov 23, 2026', value: '₹16,400,000', growth: '+10.9%' },
+      { x: 350, y: 88,  date: 'Nov 26, 2026', value: '₹18,245,000', growth: '+12.4%' },
+      { x: 430, y: 104, date: 'Nov 29, 2026', value: '₹19,800,000', growth: '+11.8%' },
+      { x: 510, y: 84,  date: 'Dec 02, 2026', value: '₹22,650,000', growth: '+13.7%' },
+      { x: 590, y: 64,  date: 'Dec 05, 2026', value: '₹25,900,000', growth: '+14.9%' },
+      { x: 670, y: 42,  date: 'Dec 08, 2026', value: '₹28,150,000', growth: '+16.1%' },
+    ],
+    xLabels: ['Nov 14', 'Nov 17', 'Nov 20', 'Nov 23', 'Nov 26', 'Nov 29', 'Dec 2', 'Dec 5', 'Dec 8']
+  },
+  '90D': {
+    label: 'the last 90 days',
+    totalRevenue: '₹184,200,000',
+    growthRate: '+24.5%',
+    defaultIndex: 3,
+    points: [
+      { x: 35,  y: 172, date: 'Aug 01, 2026', value: '₹18,500,000', growth: '+12.0%' },
+      { x: 140, y: 154, date: 'Aug 15, 2026', value: '₹26,400,000', growth: '+14.5%' },
+      { x: 245, y: 136, date: 'Sep 01, 2026', value: '₹34,100,000', growth: '+17.2%' },
+      { x: 350, y: 106, date: 'Sep 15, 2026', value: '₹42,500,000', growth: '+19.8%' },
+      { x: 455, y: 76,  date: 'Oct 01, 2026', value: '₹51,800,000', growth: '+22.1%' },
+      { x: 560, y: 52,  date: 'Oct 15, 2026', value: '₹62,400,000', growth: '+23.9%' },
+      { x: 665, y: 26,  date: 'Oct 31, 2026', value: '₹74,200,000', growth: '+25.8%' },
+    ],
+    xLabels: ['Aug 1', 'Aug 15', 'Sep 1', 'Sep 15', 'Oct 1', 'Oct 15', 'Oct 31']
+  },
+  '1Y': {
+    label: 'the past 12 months',
+    totalRevenue: '₹685,000,000',
+    growthRate: '+31.4%',
+    defaultIndex: 4,
+    points: [
+      { x: 35,  y: 168, date: 'Nov 2025', value: '₹48,000,000',  growth: '+18.4%' },
+      { x: 140, y: 148, date: 'Jan 2026', value: '₹95,000,000',  growth: '+21.5%' },
+      { x: 245, y: 126, date: 'Mar 2026', value: '₹162,000,000', growth: '+24.8%' },
+      { x: 350, y: 98,  date: 'May 2026', value: '₹248,000,000', growth: '+27.4%' },
+      { x: 455, y: 64,  date: 'Jul 2026', value: '₹375,000,000', growth: '+29.6%' },
+      { x: 560, y: 38,  date: 'Sep 2026', value: '₹520,000,000', growth: '+32.8%' },
+      { x: 665, y: 16,  date: 'Nov 2026', value: '₹685,000,000', growth: '+35.2%' },
+    ],
+    xLabels: ['Nov', 'Jan', 'Mar', 'May', 'Jul', 'Sep', 'Nov']
+  }
+};
+
+// Precompute smooth svg paths for each timeline dataset
+const timelineData = Object.keys(rawTimelineData).reduce((acc, key) => {
+  const item = rawTimelineData[key];
+  const { line, area } = generateSmoothPaths(item.points);
+  acc[key] = {
+    ...item,
+    pathLine: line,
+    pathArea: area
+  };
+  return acc;
+}, {});
+
 export default function CockpitView({ wedding, founderData, dbHealth }) {
   const [atRiskLeads, setAtRiskLeads] = useState([]);
   const [followupStatus, setFollowupStatus] = useState(null);
   const [activeTimeframe, setActiveTimeframe] = useState('30D');
-
-  // Dynamic datasets for timeframe switching
-  const timelineData = {
-    '7D': {
-      totalRevenue: '₹14,250,000',
-      growthRate: '+18.2%',
-      tooltipDate: 'Oct 29, 2026',
-      tooltipVal: '₹3,850,000',
-      tooltipGrowth: '+14.6%',
-      tooltipPos: { x: '58%', y: '35px' },
-      pin: { cx: 406, cy: 95 },
-      xLabels: ['Oct 25', 'Oct 26', 'Oct 27', 'Oct 28', 'Oct 29', 'Oct 30', 'Oct 31'],
-      pathArea: "M 0 170 C 60 160, 120 165, 180 140 C 240 115, 300 130, 360 110 C 420 90, 480 120, 540 85 C 600 55, 650 70, 700 45 L 700 180 L 0 180 Z",
-      pathLine: "M 0 170 C 60 160, 120 165, 180 140 C 240 115, 300 130, 360 110 C 420 90, 480 120, 540 85 C 600 55, 650 70, 700 45"
-    },
-    '30D': {
-      totalRevenue: '₹68,500,000',
-      growthRate: '+12.8%',
-      tooltipDate: 'Nov 22, 2026',
-      tooltipVal: '₹18,245,000',
-      tooltipGrowth: '+12.4%',
-      tooltipPos: { x: '55%', y: '15px' },
-      pin: { cx: 390, cy: 80 },
-      xLabels: ['Nov 14', 'Nov 17', 'Nov 20', 'Nov 23', 'Nov 26', 'Nov 29', 'Dec 2', 'Dec 5', 'Dec 8'],
-      pathArea: "M 0 160 C 50 150, 90 145, 140 135 C 190 125, 230 110, 280 115 C 320 120, 350 75, 390 80 C 430 85, 470 120, 510 100 C 560 80, 610 95, 650 65 C 680 45, 700 40, 700 40 L 700 180 L 0 180 Z",
-      pathLine: "M 0 160 C 50 150, 90 145, 140 135 C 190 125, 230 110, 280 115 C 320 120, 350 75, 390 80 C 430 85, 470 120, 510 100 C 560 80, 610 95, 650 65 C 680 45, 700 40, 700 40"
-    },
-    '90D': {
-      totalRevenue: '₹184,200,000',
-      growthRate: '+24.5%',
-      tooltipDate: 'Sep 28, 2026',
-      tooltipVal: '₹42,500,000',
-      tooltipGrowth: '+22.1%',
-      tooltipPos: { x: '68%', y: '10px' },
-      pin: { cx: 480, cy: 60 },
-      xLabels: ['Aug 1', 'Aug 15', 'Sep 1', 'Sep 15', 'Oct 1', 'Oct 15', 'Oct 31'],
-      pathArea: "M 0 175 C 70 165, 130 150, 200 140 C 270 130, 340 115, 410 90 C 480 60, 550 85, 620 50 C 660 30, 690 35, 700 25 L 700 180 L 0 180 Z",
-      pathLine: "M 0 175 C 70 165, 130 150, 200 140 C 270 130, 340 115, 410 90 C 480 60, 550 85, 620 50 C 660 30, 690 35, 700 25"
-    },
-    '1Y': {
-      totalRevenue: '₹685,000,000',
-      growthRate: '+31.4%',
-      tooltipDate: 'Peak Winter Dec',
-      tooltipVal: '₹145,000,000',
-      tooltipGrowth: '+38.5%',
-      tooltipPos: { x: '82%', y: '8px' },
-      pin: { cx: 580, cy: 35 },
-      xLabels: ['Nov', 'Jan', 'Mar', 'May', 'Jul', 'Sep', 'Nov'],
-      pathArea: "M 0 170 C 80 165, 150 145, 230 130 C 310 115, 380 95, 460 70 C 530 45, 580 35, 640 40 C 670 42, 690 20, 700 15 L 700 180 L 0 180 Z",
-      pathLine: "M 0 170 C 80 165, 150 145, 230 130 C 310 115, 380 95, 460 70 C 530 45, 580 35, 640 40 C 670 42, 690 20, 700 15"
-    }
-  };
+  const [hoverIndex, setHoverIndex] = useState(null);
+  const [selectedPointIndex, setSelectedPointIndex] = useState(null);
+  const chartSvgRef = useRef(null);
 
   const currentTimeline = timelineData[activeTimeframe] || timelineData['30D'];
 
@@ -280,7 +338,11 @@ export default function CockpitView({ wedding, founderData, dbHealth }) {
                 {['7D', '30D', '90D', '1Y'].map(tf => (
                   <button
                     key={tf}
-                    onClick={() => setActiveTimeframe(tf)}
+                    onClick={() => {
+                      setActiveTimeframe(tf);
+                      setHoverIndex(null);
+                      setSelectedPointIndex(null);
+                    }}
                     style={{
                       padding: '4px 10px',
                       borderRadius: '6px',
@@ -299,100 +361,229 @@ export default function CockpitView({ wedding, founderData, dbHealth }) {
                 ))}
               </div>
 
-              {/* Dynamic Metric indicators */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingLeft: '8px', borderLeft: '1px solid #e2e8f0' }}>
-                <div>
-                  <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Revenue</div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a' }}>{currentTimeline.totalRevenue}</div>
+              {/* Dynamic Metric indicators (updates on hover) */}
+              {(() => {
+                const effIdx = hoverIndex !== null 
+                  ? hoverIndex 
+                  : (selectedPointIndex !== null ? selectedPointIndex : (currentTimeline.defaultIndex ?? 4));
+                const pt = currentTimeline.points[effIdx] || currentTimeline.points[0];
+                return (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingLeft: '8px', borderLeft: '1px solid #e2e8f0', minWidth: '160px' }}>
+                    <div>
+                      <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>
+                        {pt.date.split(',')[0]} Inflow
+                      </div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a' }}>
+                        {pt.value}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Growth</div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#10b981' }}>
+                        {pt.growth}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+
+          {/* DYNAMIC SVG CHART WITH REAL-TIME HOVER TRACKING */}
+          {(() => {
+            const effectiveIndex = hoverIndex !== null 
+              ? hoverIndex 
+              : (selectedPointIndex !== null ? selectedPointIndex : (currentTimeline.defaultIndex ?? 4));
+            
+            const activePoint = currentTimeline.points[effectiveIndex] || currentTimeline.points[0];
+            const rawPercent = (activePoint.x / 700) * 100;
+            const clampedLeft = Math.max(12, Math.min(88, rawPercent));
+            const tooltipTop = Math.max(8, activePoint.y - 70);
+
+            return (
+              <div 
+                style={{ 
+                  position: 'relative', 
+                  width: '100%', 
+                  height: '220px', 
+                  marginTop: '10px', 
+                  userSelect: 'none'
+                }}
+              >
+                <svg 
+                  ref={chartSvgRef}
+                  width="100%" 
+                  height="190" 
+                  viewBox="0 0 700 190" 
+                  preserveAspectRatio="none"
+                  style={{ overflow: 'visible' }}
+                >
+                  <defs>
+                    <linearGradient id="dynRevenueGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#4f46e5" stopOpacity="0.22" />
+                      <stop offset="100%" stopColor="#4f46e5" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+
+                  {/* Grid lines */}
+                  <line x1="0" y1="160" x2="700" y2="160" stroke="#f1f5f9" strokeWidth="1" />
+                  <line x1="0" y1="120" x2="700" y2="120" stroke="#f1f5f9" strokeWidth="1" />
+                  <line x1="0" y1="80" x2="700" y2="80" stroke="#f1f5f9" strokeWidth="1" />
+                  <line x1="0" y1="40" x2="700" y2="40" stroke="#f1f5f9" strokeWidth="1" />
+
+                  {/* Dynamic Area Fill */}
+                  <path
+                    d={currentTimeline.pathArea}
+                    fill="url(#dynRevenueGradient)"
+                    style={{ transition: 'd 0.35s ease' }}
+                  />
+
+                  {/* Dynamic Line Curve */}
+                  <path
+                    d={currentTimeline.pathLine}
+                    fill="none"
+                    stroke="#4f46e5"
+                    strokeWidth="2.8"
+                    strokeLinecap="round"
+                    style={{ transition: 'd 0.35s ease' }}
+                  />
+
+                  {/* Real-time Vertical Guideline to hovered point */}
+                  <line 
+                    x1={activePoint.x} 
+                    y1={activePoint.y} 
+                    x2={activePoint.x} 
+                    y2="175" 
+                    stroke="#818cf8" 
+                    strokeWidth="1.5" 
+                    strokeDasharray="3 3" 
+                    style={{ transition: 'x1 0.1s ease-out, y1 0.1s ease-out, x2 0.1s ease-out' }}
+                  />
+
+                  {/* Outer Glow Halo Ring */}
+                  <circle 
+                    cx={activePoint.x} 
+                    cy={activePoint.y} 
+                    r="9" 
+                    fill="#4f46e5" 
+                    fillOpacity="0.22"
+                    style={{ transition: 'cx 0.1s ease-out, cy 0.1s ease-out' }}
+                  />
+
+                  {/* Discrete interactive data points on curve */}
+                  {currentTimeline.points.map((pt, i) => (
+                    <circle
+                      key={`dot-${i}`}
+                      cx={pt.x}
+                      cy={pt.y}
+                      r={i === effectiveIndex ? 6 : 4}
+                      fill={i === effectiveIndex ? '#4f46e5' : '#a5b4fc'}
+                      stroke="#ffffff"
+                      strokeWidth={i === effectiveIndex ? 2 : 1}
+                      style={{ cursor: 'pointer', transition: 'all 0.15s ease' }}
+                      onMouseEnter={() => {
+                        setHoverIndex(i);
+                        setSelectedPointIndex(i);
+                      }}
+                      onClick={() => {
+                        setSelectedPointIndex(i);
+                        setHoverIndex(i);
+                      }}
+                    />
+                  ))}
+
+                  {/* Full vertical transparent slices covering every point for instant hover reaction */}
+                  {currentTimeline.points.map((pt, i) => {
+                    const pts = currentTimeline.points;
+                    const prevX = i > 0 ? (pts[i - 1].x + pt.x) / 2 : 0;
+                    const nextX = i < pts.length - 1 ? (pt.x + pts[i + 1].x) / 2 : 700;
+                    const colWidth = nextX - prevX;
+                    return (
+                      <rect
+                        key={`slice-${i}`}
+                        x={prevX}
+                        y="0"
+                        width={colWidth}
+                        height="190"
+                        fill="transparent"
+                        style={{ cursor: 'pointer', pointerEvents: 'all' }}
+                        onMouseEnter={() => {
+                          setHoverIndex(i);
+                          setSelectedPointIndex(i);
+                        }}
+                        onMouseMove={() => {
+                          if (hoverIndex !== i) {
+                            setHoverIndex(i);
+                            setSelectedPointIndex(i);
+                          }
+                        }}
+                        onClick={() => {
+                          setSelectedPointIndex(i);
+                          setHoverIndex(i);
+                        }}
+                      />
+                    );
+                  })}
+                </svg>
+
+                {/* Real-time Dynamic Floating Tooltip Badge */}
+                <div style={{
+                  position: 'absolute',
+                  left: `${clampedLeft}%`,
+                  top: `${tooltipTop}px`,
+                  transform: 'translateX(-50%)',
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  padding: '6px 14px',
+                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                  textAlign: 'center',
+                  pointerEvents: 'none',
+                  transition: 'left 0.12s ease-out, top 0.12s ease-out',
+                  zIndex: 10
+                }}>
+                  <div style={{ fontSize: '0.66rem', color: '#94a3b8', whiteSpace: 'nowrap' }}>{activePoint.date}</div>
+                  <div style={{ fontSize: '0.86rem', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>{activePoint.value}</div>
+                  <div style={{ fontSize: '0.68rem', color: '#10b981', fontWeight: 600, whiteSpace: 'nowrap' }}>↑ {activePoint.growth}</div>
                 </div>
-                <div>
-                  <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Growth</div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#10b981' }}>{currentTimeline.growthRate}</div>
+
+                {/* Dynamic X-Axis Labels with active column highlight and clickability */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', marginTop: '6px', padding: '0 4px' }}>
+                  {currentTimeline.xLabels.map((xl, i) => {
+                    const isColActive = i === effectiveIndex;
+                    return (
+                      <button 
+                        key={i}
+                        type="button"
+                        onClick={() => {
+                          setSelectedPointIndex(i);
+                          setHoverIndex(i);
+                        }}
+                        onMouseEnter={() => {
+                          setHoverIndex(i);
+                          setSelectedPointIndex(i);
+                        }}
+                        style={{
+                          background: isColActive ? '#eef2ff' : 'transparent',
+                          border: isColActive ? '1px solid #c7d2fe' : '1px solid transparent',
+                          borderRadius: '4px',
+                          padding: '2px 6px',
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                          fontSize: '0.68rem',
+                          color: isColActive ? '#4f46e5' : '#94a3b8',
+                          fontWeight: isColActive ? 700 : 500,
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        {xl}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* DYNAMIC SVG CHART WITH SMOOTH TRANSITION */}
-          <div style={{ position: 'relative', width: '100%', height: '220px', marginTop: '10px' }}>
-            <svg width="100%" height="190" viewBox="0 0 700 190" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="dynRevenueGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#4f46e5" stopOpacity="0.22" />
-                  <stop offset="100%" stopColor="#4f46e5" stopOpacity="0.0" />
-                </linearGradient>
-              </defs>
-
-              {/* Grid lines */}
-              <line x1="0" y1="160" x2="700" y2="160" stroke="#f1f5f9" strokeWidth="1" />
-              <line x1="0" y1="120" x2="700" y2="120" stroke="#f1f5f9" strokeWidth="1" />
-              <line x1="0" y1="80" x2="700" y2="80" stroke="#f1f5f9" strokeWidth="1" />
-              <line x1="0" y1="40" x2="700" y2="40" stroke="#f1f5f9" strokeWidth="1" />
-
-              {/* Dynamic Area Fill */}
-              <path
-                d={currentTimeline.pathArea}
-                fill="url(#dynRevenueGradient)"
-                style={{ transition: 'd 0.35s ease' }}
-              />
-
-              {/* Dynamic Line Curve */}
-              <path
-                d={currentTimeline.pathLine}
-                fill="none"
-                stroke="#4f46e5"
-                strokeWidth="2.8"
-                strokeLinecap="round"
-                style={{ transition: 'd 0.35s ease' }}
-              />
-
-              {/* Dynamic Highlight Pin */}
-              <line 
-                x1={currentTimeline.pin.cx} 
-                y1={currentTimeline.pin.cy} 
-                x2={currentTimeline.pin.cx} 
-                y2="160" 
-                stroke="#c7d2fe" 
-                strokeWidth="1.5" 
-                strokeDasharray="3 3" 
-              />
-              <circle 
-                cx={currentTimeline.pin.cx} 
-                cy={currentTimeline.pin.cy} 
-                r="5" 
-                fill="#4f46e5" 
-                stroke="#ffffff" 
-                strokeWidth="2.5" 
-              />
-            </svg>
-
-            {/* Dynamic Tooltip Badge */}
-            <div style={{
-              position: 'absolute',
-              left: currentTimeline.tooltipPos.x,
-              top: currentTimeline.tooltipPos.y,
-              transform: 'translateX(-50%)',
-              background: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: '8px',
-              padding: '6px 12px',
-              boxShadow: 'var(--shadow-elevated)',
-              textAlign: 'center',
-              pointerEvents: 'none',
-              transition: 'all 0.3s ease'
-            }}>
-              <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>{currentTimeline.tooltipDate}</div>
-              <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#0f172a' }}>{currentTimeline.tooltipVal}</div>
-              <div style={{ fontSize: '0.68rem', color: '#10b981', fontWeight: 600 }}>↑ {currentTimeline.tooltipGrowth}</div>
-            </div>
-
-            {/* Dynamic X-Axis Labels */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: '#94a3b8', marginTop: '2px' }}>
-              {currentTimeline.xLabels.map((xl, i) => (
-                <span key={i}>{xl}</span>
-              ))}
-            </div>
-          </div>
+            );
+          })()}
         </div>
 
         {/* Right Card: Budget Breakdown Donut */}
