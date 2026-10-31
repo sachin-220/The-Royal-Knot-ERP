@@ -202,7 +202,7 @@ class KnotCoreBotEngine:
             session["signed"] = False
             self.send_message(
                 chat_id,
-                "🔄 <b>Session reset successfully!</b>\n"
+                " <b>Session reset successfully!</b>\n"
                 "Let's craft your royal celebration in Jaipur or Udaipur from Step 1."
             )
             self._prompt_interview_step(chat_id, session, 1)
@@ -231,7 +231,7 @@ class KnotCoreBotEngine:
                 session["role"] = new_role
                 self.send_message(
                     chat_id,
-                    f"🔄 <b>Demo Mode: Role Switched to: {new_role.upper()}</b>"
+                    f" <b>Demo Mode: Role Switched to: {new_role.upper()}</b>"
                 )
                 self._send_role_welcome(chat_id, session)
                 return
@@ -261,7 +261,7 @@ class KnotCoreBotEngine:
             session["interview_step"] = 1
             self.send_message(
                 chat_id,
-                f"👑 <b>QR Scan Verified: Connected to The Royal Knot Unified Bot!</b>\n"
+                f" <b>QR Scan Verified: Connected to The Royal Knot Unified Bot!</b>\n"
                 f"Padharo Sa, {sender_name}! We are honored to plan your dream heritage wedding."
             )
             self._prompt_interview_step(chat_id, session, 1)
@@ -276,12 +276,12 @@ class KnotCoreBotEngine:
         # 3. Role tokens from Phase 1
         if "founder" in param:
             session["role"] = "founder"
-            self.send_message(chat_id, "👑 <b>QR Scan Verified: Authenticated as FOUNDER / EXECUTIVE</b>")
+            self.send_message(chat_id, " <b>QR Scan Verified: Authenticated as FOUNDER / EXECUTIVE</b>")
             self._send_role_welcome(chat_id, session)
             return
         elif "planner" in param:
             session["role"] = "planner"
-            self.send_message(chat_id, "📋 <b>QR Scan Verified: Authenticated as LEAD WEDDING PLANNER</b>")
+            self.send_message(chat_id, " <b>QR Scan Verified: Authenticated as LEAD WEDDING PLANNER</b>")
             self._send_role_welcome(chat_id, session)
             return
 
@@ -290,7 +290,7 @@ class KnotCoreBotEngine:
         session["interview_step"] = 1
         self.send_message(
             chat_id,
-            f"👑 <b>Welcome to The Royal Knot, {sender_name}!</b>\n\n"
+            f" <b>Welcome to The Royal Knot, {sender_name}!</b>\n\n"
             "We plan bespoke luxury destination weddings across heritage palaces in <b>Jaipur & Udaipur</b>."
         )
         self._prompt_interview_step(chat_id, session, 1)
@@ -304,7 +304,7 @@ class KnotCoreBotEngine:
         if step == 1:
             self.send_message(
                 chat_id,
-                "👑 <b>Step 1 of 4: The Couple & Royal Destination</b>\n\n"
+                " <b>Step 1 of 4: The Couple & Royal Destination</b>\n\n"
                 "Please share the names of the <b>Bride & Groom</b>, and which royal destination calls to your heart:\n"
                 "• <b>Jaipur</b> (Rambagh Palace, Samode Palace, Fairmont)\n"
                 "• <b>Udaipur</b> (City Palace, Jagmandir Island, Taj Lake Palace)\n\n"
@@ -315,21 +315,21 @@ class KnotCoreBotEngine:
             couple = enquiry.get("couple_names") or "the couple"
             self.send_message(
                 chat_id,
-                f"🏰 <b>Step 2 of 4: Celebration Span & Dates</b>\n\n"
+                f" <b>Step 2 of 4: Celebration Span & Dates</b>\n\n"
                 f"Magnificent choice for {couple} in <b>{dest}</b>!\n"
                 "How many days of celebrations are you envisioning (e.g. <b>3-day royal affair:</b> Mehendi, Sangeet, Royal Pheras, Reception), and do you have preferred dates or a season?"
             )
         elif step == 3:
             self.send_message(
                 chat_id,
-                "👥 <b>Step 3 of 4: Royal Guestlist Estimate</b>\n\n"
+                " <b>Step 3 of 4: Royal Guestlist Estimate</b>\n\n"
                 "Approximately how many esteemed guests will grace your celebrations?\n"
                 "<i>(Our ML Turnout Engine will automatically compute outstation arrival buffers & banquet plate surges based on your answer!)</i>"
             )
         elif step == 4:
             self.send_message(
                 chat_id,
-                "💎 <b>Step 4 of 4: Budget Range & Thematic Vision</b>\n\n"
+                " <b>Step 4 of 4: Budget Range & Thematic Vision</b>\n\n"
                 "What is your anticipated total celebration budget range (e.g. <b>₹2.0 Cr - ₹3.5 Cr</b>), and any signature aesthetic elements (e.g. revolving lotus mandap, vintage Rolls Royce baraat, concert sound)?"
             )
 
@@ -357,7 +357,7 @@ class KnotCoreBotEngine:
             plates = int(pax * 1.31)
 
             confirm_msg = (
-                "✨ <b>YOUR ROYAL ENQUIRY IS OFFICIALLY REGISTERED!</b>\n\n"
+                " <b>YOUR ROYAL ENQUIRY IS OFFICIALLY REGISTERED!</b>\n\n"
                 f"• <b>Inquiry Ref:</b> <code>INQ-2026-{inquiry_id or '01'}</code>\n"
                 f"• <b>Couple:</b> {session['enquiry_data'].get('couple_names', sender_name)}\n"
                 f"• <b>Destination:</b> {session['enquiry_data'].get('destination', 'Jaipur')}\n"
@@ -366,8 +366,8 @@ class KnotCoreBotEngine:
                 f"• <b>ML Predicted Turnout:</b> {ml_pax} Guests (+17% Buffer)\n"
                 f"• <b>Shahi Banqueting Plates:</b> {plates} Plates (+31% Buffer)\n"
                 f"• <b>Budget Allocated:</b> ₹{(budget_val/10000000):.2f} Cr\n\n"
-                "📊 <b>Instant Transmission:</b> Your portfolio has been routed to the <b>KnotCore Executive Dashboard (User Enquiries)</b>.\n\n"
-                "✍️ <i>To digitally counter-sign the Royal Proposal & confirm Milestone 1 Advance, type <code>/sign</code> or wait for your planner's action trigger.</i>"
+                " <b>Instant Transmission:</b> Your portfolio has been routed to the <b>KnotCore Executive Dashboard (User Enquiries)</b>.\n\n"
+                "️ <i>To digitally counter-sign the Royal Proposal & confirm Milestone 1 Advance, type <code>/sign</code> or wait for your planner's action trigger.</i>"
             )
             self.send_message(chat_id, confirm_msg)
         else:
@@ -452,13 +452,13 @@ class KnotCoreBotEngine:
         # Send confirmation to client
         self.send_message(
             chat_id,
-            "🎉 <b>PROPOSAL COUNTER-SIGNED & MILESTONE 1 ADVANCE CONFIRMED!</b>\n\n"
+            " <b>PROPOSAL COUNTER-SIGNED & MILESTONE 1 ADVANCE CONFIRMED!</b>\n\n"
             f"Dear <b>{couple}</b>,\n"
             f"Your digital counter-signature for the 3-Day Royal Wedding at <b>{city}</b> has been securely stamped.\n\n"
             f"• <b>Milestone 1 Advance (30%):</b> ₹{advance:,.0f} [CONFIRMED & HELD]\n"
             "• <b>Palace Dates:</b> Locked on Heritage Grounds\n"
             "• <b>Proposal PDF:</b> Compiled & Available in Dashboard\n\n"
-            "🔒 <b>ONE-WAY MIRROR PROCUREMENT ACTIVATED:</b>\n"
+            " <b>ONE-WAY MIRROR PROCUREMENT ACTIVATED:</b>\n"
             "The RFP specifications have been released to our verified supplier network under strict blind bidding. Competing vendors cannot view each other's quotes; all bids flow directly to the KnotCore Platform Admin."
         )
 
@@ -466,13 +466,13 @@ class KnotCoreBotEngine:
 
     def _send_vendor_oneway_mirror_welcome(self, chat_id: int, sender_name: str):
         welcome_text = (
-            "🚚 <b>THE ROYAL KNOT — VENDOR PROCUREMENT NETWORK</b>\n\n"
+            " <b>THE ROYAL KNOT — VENDOR PROCUREMENT NETWORK</b>\n\n"
             f"Welcome, {sender_name}! You have entered the verified supplier bidding portal.\n\n"
-            "🔒 <b>ONE-WAY MIRROR BLIND BIDDING PROTOCOL:</b>\n"
+            " <b>ONE-WAY MIRROR BLIND BIDDING PROTOCOL:</b>\n"
             "• All RFP specifications and proposals are strictly confidential.\n"
             "• When you submit a quote, it is sent <b>directly and privately</b> to the KnotCore Platform Admin.\n"
             "• <b>Competing vendors cannot see your bid, price, or identity.</b> (Zero price collusion)\n\n"
-            "📋 <b>Active RFPs for Aarav & Diya Royal Wedding (Jaipur):</b>\n"
+            " <b>Active RFPs for Aarav & Diya Royal Wedding (Jaipur):</b>\n"
             "1. <code>CAT-02</code> Royal Catering & Banqueting (524 Buffet Plates)\n"
             "2. <code>CAT-03</code> Floral Architecture & Production\n"
             "3. <code>CAT-05</code> Concert Light & Sound AV (Meyer Sound Line Arrays)\n\n"
@@ -488,7 +488,7 @@ class KnotCoreBotEngine:
         if len(parts) < 4:
             self.send_message(
                 chat_id,
-                "⚠️ <b>Invalid bid format.</b> Please use:\n"
+                "️ <b>Invalid bid format.</b> Please use:\n"
                 "<code>/bid &lt;category_code&gt; &lt;vendor_name&gt; &lt;amount_in_inr&gt;</code>\n"
                 "Example: <code>/bid CAT-02 Shahi Kitchens 5100000</code>"
             )
@@ -499,7 +499,7 @@ class KnotCoreBotEngine:
         try:
             quoted_price = float(parts[3].replace(',', '').strip())
         except ValueError:
-            self.send_message(chat_id, "⚠️ Invalid amount. Please provide a numeric value in INR.")
+            self.send_message(chat_id, "️ Invalid amount. Please provide a numeric value in INR.")
             return
 
         # Historical benchmark stats for demo categories
@@ -554,13 +554,13 @@ class KnotCoreBotEngine:
         # Send private confirmation (One-Way Mirror)
         self.send_message(
             chat_id,
-            "✅ <b>CONFIDENTIAL QUOTE SECURELY TRANSMITTED!</b>\n\n"
+            " <b>CONFIDENTIAL QUOTE SECURELY TRANSMITTED!</b>\n\n"
             f"• <b>Bid Reference:</b> <code>BID-{quote_id or secrets.randbelow(900)+100}</code>\n"
             f"• <b>Category:</b> {cat_code} ({bench['name']})\n"
             f"• <b>Vendor:</b> {vendor_name}\n"
             f"• <b>Quoted Price:</b> ₹{(quoted_price/100000):.2f} Lakhs\n"
             f"• <b>WCI Evaluation Score:</b> <b>{wci_score} / 100</b>\n\n"
-            "🔒 <b>ONE-WAY MIRROR GUARANTEE:</b>\n"
+            " <b>ONE-WAY MIRROR GUARANTEE:</b>\n"
             "Your quote is private to you and the KnotCore Platform Admin. No competing vendors in the group can view your bid."
         )
 
@@ -569,34 +569,34 @@ class KnotCoreBotEngine:
     def _send_role_welcome(self, chat_id: int, session: Dict[str, Any]):
         role = session["role"]
         if role == "founder":
-            self.send_message(chat_id, "👑 <b>Executive Command Center Active</b>\nUse <code>/profit</code>, <code>/due</code>, <code>/delays</code>, <code>/top</code>.")
+            self.send_message(chat_id, " <b>Executive Command Center Active</b>\nUse <code>/profit</code>, <code>/due</code>, <code>/delays</code>, <code>/top</code>.")
         elif role == "planner":
-            self.send_message(chat_id, "📋 <b>Wedding Operations Command Active</b>\nUse <code>/tasks</code>, <code>/schedule</code>, <code>/unconfirmed</code>.")
+            self.send_message(chat_id, " <b>Wedding Operations Command Active</b>\nUse <code>/tasks</code>, <code>/schedule</code>, <code>/unconfirmed</code>.")
         elif role in ["vendor", "vendor_bidder"]:
             self._send_vendor_oneway_mirror_welcome(chat_id, session.get("name", "Supplier"))
         elif role == "client":
-            self.send_message(chat_id, "💍 <b>The Royal Knot Couple VIP Portal</b>\nUse <code>/status</code>, <code>/payments</code>, <code>/sign</code>.")
+            self.send_message(chat_id, " <b>The Royal Knot Couple VIP Portal</b>\nUse <code>/status</code>, <code>/payments</code>, <code>/sign</code>.")
 
     def _handle_founder_message(self, chat_id: int, text: str, session: Dict[str, Any]):
         if "/profit" in text.lower():
-            self.send_message(chat_id, "📊 <b>FOUNDER MARGIN:</b> Season Revenue: ₹78.5 Cr | Projected Profit: ₹17.2 Cr (21.9% Margin)")
+            self.send_message(chat_id, " <b>FOUNDER MARGIN:</b> Season Revenue: ₹78.5 Cr | Projected Profit: ₹17.2 Cr (21.9% Margin)")
             return
         if "/due" in text.lower():
-            self.send_message(chat_id, "💳 <b>CASH FLOW:</b> Outflow due in 7 days: ₹20.50L. Incoming milestone: ₹1.20 Cr.")
+            self.send_message(chat_id, " <b>CASH FLOW:</b> Outflow due in 7 days: ₹20.50L. Incoming milestone: ₹1.20 Cr.")
             return
         copilot = GeminiLeadExtractor.generate_role_copilot_reply("founder", text, self.founder_context)
-        self.send_message(chat_id, f"👑 <b>Executive Copilot:</b>\n\n{copilot or text}")
+        self.send_message(chat_id, f" <b>Executive Copilot:</b>\n\n{copilot or text}")
 
     def _handle_planner_message(self, chat_id: int, text: str, session: Dict[str, Any]):
         if "/tasks" in text.lower():
-            self.send_message(chat_id, "📋 <b>PLANNER TASKS:</b> Catering tasting overdue (1 day). Stage sound audit due in 48h.")
+            self.send_message(chat_id, " <b>PLANNER TASKS:</b> Catering tasting overdue (1 day). Stage sound audit due in 48h.")
             return
         copilot = GeminiLeadExtractor.generate_role_copilot_reply("planner", text, self.planner_context)
-        self.send_message(chat_id, f"📋 <b>Operations Copilot:</b>\n\n{copilot or text}")
+        self.send_message(chat_id, f" <b>Operations Copilot:</b>\n\n{copilot or text}")
 
     def _handle_vendor_message(self, chat_id: int, text: str, session: Dict[str, Any]):
         if text.strip() == "4821":
-            self.send_message(chat_id, "✅ <b>Palace Gate Check-In Verified!</b> Dock 3 unloading cleared.")
+            self.send_message(chat_id, " <b>Palace Gate Check-In Verified!</b> Dock 3 unloading cleared.")
             return
 
         # Vendor Quotation Verification & OCR Engine
@@ -634,7 +634,7 @@ class KnotCoreBotEngine:
 
         self.send_message(
             chat_id,
-            "🚚 <b>Vendor Portal:</b> Please submit your itemized quotation (e.g. category, quantity of plates/units, price) or reply with OTP <code>4821</code>."
+            " <b>Vendor Portal:</b> Please submit your itemized quotation (e.g. category, quantity of plates/units, price) or reply with OTP <code>4821</code>."
         )
 
     def _handle_client_message(self, chat_id: int, text: str, session: Dict[str, Any]):
@@ -642,7 +642,7 @@ class KnotCoreBotEngine:
             self._handle_client_digital_signing(chat_id, session)
             return
         if "/payments" in text.lower():
-            self.send_message(chat_id, "💳 <b>PAYMENTS:</b> Milestone 1 (30%): ₹90.0L [PAID]. Milestone 2 (40%): ₹1.20 Cr [Due in 18d].")
+            self.send_message(chat_id, " <b>PAYMENTS:</b> Milestone 1 (30%): ₹90.0L [PAID]. Milestone 2 (40%): ₹1.20 Cr [Due in 18d].")
             return
         copilot = GeminiLeadExtractor.generate_role_copilot_reply("client", text, self.client_context)
-        self.send_message(chat_id, f"💍 <b>Royal Concierge:</b>\n\n{copilot or text}")
+        self.send_message(chat_id, f" <b>Royal Concierge:</b>\n\n{copilot or text}")

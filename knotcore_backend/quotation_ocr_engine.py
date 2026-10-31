@@ -74,7 +74,7 @@ class QuotationOCREngine:
                 "is_quotation": False,
                 "status": "rejected_not_quotation",
                 "message": (
-                    "⚠️ <b>NOT A VALID QUOTATION DETECTED:</b>\n\n"
+                    "<b>[NOT A VALID QUOTATION DETECTED]</b>\n\n"
                     f"Dear {vendor_sender_name}, your submission does not contain commercial pricing, quotation terms, or itemized service scope.\n\n"
                     "<i>Please provide an official vendor quotation with:</i>\n"
                     "• Service Category (e.g. <code>CAT-02</code> Royal Catering, <code>CAT-03</code> Floral)\n"
@@ -109,11 +109,11 @@ class QuotationOCREngine:
                 blank_prompts.append("• <b>Category Code:</b> e.g. CAT-02 (Catering) or CAT-03 (Floral)")
 
             prompt_text = (
-                "📝 <b>QUOTATION RECEIVED — FILL IN THE BLANKS REQUIRED:</b>\n\n"
+                "<b>[QUOTATION RECEIVED - MISSING PARAMETERS]</b>\n\n"
                 f"Thank you, <b>{extracted['vendor_name']}</b>! We identified your quote for <i>'{extracted['item_description']}'</i>, "
                 "but the following essential procurement parameter(s) are missing:\n\n"
                 + "\n".join(blank_prompts) + "\n\n"
-                "👉 <b>Please reply directly to fill in the blanks:</b>\n"
+                "<b>Please reply directly with the missing information:</b>\n"
                 f"<i>(e.g., reply 'Quantity: 524 plates' or simply '524')</i>"
             )
 
@@ -276,7 +276,7 @@ class QuotationOCREngine:
                 "status": "missing_fields",
                 "missing_fields": missing,
                 "extracted_so_far": extracted,
-                "message": f"📝 Thank you! We still need: {', '.join(missing).upper()}. Please provide it to finalize."
+                "message": f"Thank you. We still need: {', '.join(missing).upper()}. Please provide it to finalize."
             }
 
         # All resolved!
@@ -333,12 +333,12 @@ class QuotationOCREngine:
                     conn.close()
 
         anomaly_alert = (
-            f"\n\n⚠️ <b>+2σ PRICE ANOMALY FLAGGED:</b> Quote of ₹{(price/100000):.2f}L exceeds +2 Standard Deviations (Avg: ₹{(hist_avg/100000):.2f}L)."
+            f"\n\n<b>[+2-SIGMA PRICE ANOMALY FLAGGED]:</b> Quote of ₹{(price/100000):.2f}L exceeds +2 Standard Deviations (Avg: ₹{(hist_avg/100000):.2f}L)."
             if is_anomaly else ""
         )
 
         confirm_msg = (
-            "✅ <b>VENDOR QUOTATION VERIFIED & PLACED IN COMPARISON GRID!</b>\n\n"
+            "<b>[VENDOR QUOTATION VERIFIED & PLACED IN COMPARISON GRID]</b>\n\n"
             f"• <b>Bid Reference:</b> <code>BID-{quote_id or secrets.randbelow(800)+100}</code>\n"
             f"• <b>Vendor:</b> {extracted['vendor_name']}\n"
             f"• <b>Service:</b> {extracted['item_description']}\n"
@@ -347,7 +347,7 @@ class QuotationOCREngine:
             f"• <b>Quoted Price:</b> ₹{(price/100000):.2f} Lakhs\n"
             f"• <b>WCI Evaluation Score:</b> <b>{wci_score} / 100</b>\n"
             f"{anomaly_alert}\n\n"
-            "🔒 <b>ONE-WAY MIRROR SECURED:</b> Your quotation has been placed in the KnotCore Executive Comparison Grid. Competing vendors cannot view your pricing."
+            "<b>[ONE-WAY MIRROR SECURED]:</b> Your quotation has been placed in the KnotCore Comparison Grid. Competing vendors cannot view your pricing."
         )
 
         return {

@@ -661,14 +661,14 @@ def take_action_on_inquiry(inquiry_id):
         try:
             tg_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
             msg = (
-                f"💍 <b>OFFICIAL ROYAL PROPOSAL READY FOR DIGITAL SIGNING!</b>\n\n"
+                f" <b>OFFICIAL ROYAL PROPOSAL READY FOR DIGITAL SIGNING!</b>\n\n"
                 f"Dear <b>{inquiry['name']}</b>,\n"
                 f"The Royal Knot Executive Board has reviewed your enquiry and prepared your official 3-day luxury proposal.\n\n"
                 f"• <b>Venue:</b> {inquiry['preferred_city']} Heritage Palace\n"
                 f"• <b>Base Guests:</b> {pax} | <b>ML Predicted Turnout:</b> {predicted_turnout}\n"
                 f"• <b>Total Budget:</b> ₹{(budget/10000000):.2f} Cr\n"
                 f"• <b>Milestone 1 Advance (30%):</b> ₹{(advance_amount/100000):.2f} Lakhs (Held to lock palace dates)\n\n"
-                f"✍️ <b>Reply <code>/sign</code> to digitally counter-sign the agreement and release blind RFQs to verified palace vendors.</b>"
+                f"️ <b>Reply <code>/sign</code> to digitally counter-sign the agreement and release blind RFQs to verified palace vendors.</b>"
             )
             requests.post(tg_url, json={"chat_id": chat_id, "text": msg, "parse_mode": "HTML"}, timeout=5)
         except Exception as e:
@@ -837,7 +837,7 @@ def send_customized_followup(inquiry_id):
     if chat_id and bot_token:
         try:
             tg_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-            requests.post(tg_url, json={"chat_id": chat_id, "text": f"👑 <b>The Royal Knot Executive Concierge:</b>\n\n{draft}", "parse_mode": "HTML"}, timeout=5)
+            requests.post(tg_url, json={"chat_id": chat_id, "text": f" <b>The Royal Knot Executive Concierge:</b>\n\n{draft}", "parse_mode": "HTML"}, timeout=5)
         except Exception as e:
             print(f"[Follow-up Send Error] {e}")
 

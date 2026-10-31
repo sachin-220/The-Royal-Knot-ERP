@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, Send, X, Bot, User, Crown, Shield } from 'lucide-react';
+import { Send, X, Bot, User, ShieldCheck } from 'lucide-react';
 
 export default function ConciergeModal({ isOpen, onClose, wedding }) {
   if (!isOpen) return null;
@@ -8,7 +8,7 @@ export default function ConciergeModal({ isOpen, onClose, wedding }) {
   const [messages, setMessages] = useState([
     {
       sender: 'bot',
-      text: `Padharo Sa! I am the Royal Concierge for ${wedding ? wedding.name : 'The Royal Knot'}. How may I orchestrate your luxury wedding requirements today?`
+      text: `Greetings. I am the KnotCore Concierge for ${wedding ? wedding.name : 'The Royal Knot'}. How may I assist your wedding planning requirements today?`
     }
   ]);
   const [inputMsg, setInputMsg] = useState('');
@@ -30,9 +30,9 @@ export default function ConciergeModal({ isOpen, onClose, wedding }) {
         body: JSON.stringify({ message: userText, role })
       });
       const data = await res.json();
-      setMessages(prev => [...prev, { sender: 'bot', text: data.reply || "Greetings from The Royal Knot." }]);
+      setMessages(prev => [...prev, { sender: 'bot', text: data.reply || "Greetings from KnotCore Concierge." }]);
     } catch (err) {
-      setMessages(prev => [...prev, { sender: 'bot', text: "The Royal Knot Concierge is actively coordinating palace operations. How can I assist you further?" }]);
+      setMessages(prev => [...prev, { sender: 'bot', text: "KnotCore Concierge is actively coordinating palace operations. How can I assist you further?" }]);
     } finally {
       setLoading(false);
     }
@@ -42,172 +42,111 @@ export default function ConciergeModal({ isOpen, onClose, wedding }) {
     <div style={{
       position: 'fixed',
       top: 0, left: 0, right: 0, bottom: 0,
-      background: 'rgba(0,0,0,0.7)',
+      background: 'rgba(15, 23, 42, 0.5)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 1000,
-      backdropFilter: 'blur(8px)'
+      backdropFilter: 'blur(4px)'
     }}>
-      <div className="glass-panel" style={{
-        width: '560px',
-        height: '620px',
+      <div style={{
+        background: '#ffffff',
+        width: '540px',
+        height: '580px',
         display: 'flex',
         flexDirection: 'column',
-        borderRadius: 'var(--radius-lg)',
-        border: '1px solid var(--color-border)',
+        borderRadius: '16px',
+        border: '1px solid #e2e8f0',
         boxShadow: 'var(--shadow-elevated)',
         overflow: 'hidden'
       }}>
         {/* Header */}
         <div style={{
           padding: '16px 20px',
-          background: 'linear-gradient(135deg, rgba(22, 38, 82, 0.95) 0%, rgba(13, 22, 48, 0.95) 100%)',
-          borderBottom: '1px solid var(--color-border)',
+          background: '#f8fafc',
+          borderBottom: '1px solid #e2e8f0',
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
+          justifyContent: 'space-between',
+          alignItems: 'center'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '10px',
-              background: 'var(--color-gold-gradient)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#070d1e'
-            }}>
-              <Sparkles size={20} />
-            </div>
-            <div>
-              <div className="font-royal" style={{ fontWeight: 800, fontSize: '1.05rem', margin: 0 }}>
-                Royal AI Concierge
-              </div>
-              <div style={{ fontSize: '0.72rem', color: '#34d399', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span className="live-dot" /> Connected to Gemini 3.5 Flash & DB
-              </div>
-            </div>
+          <div>
+            <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#0f172a' }}>
+              KnotCore Operations Assistant
+            </h3>
+            <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: '#64748b' }}>
+              Gemini AI Conversational Copilot
+            </p>
           </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {/* Role Switcher */}
-            <select
-              value={role}
-              onChange={e => setRole(e.target.value)}
-              style={{
-                background: 'rgba(5, 9, 20, 0.7)',
-                color: 'var(--color-gold-light)',
-                border: '1px solid var(--color-border)',
-                borderRadius: '6px',
-                padding: '4px 8px',
-                fontSize: '0.75rem',
-                fontWeight: 600
-              }}
-            >
-              <option value="client">Client View</option>
-              <option value="founder">Founder View</option>
-              <option value="planner">Planner View</option>
-              <option value="vendor">Vendor View</option>
-            </select>
-
-            <button onClick={onClose} className="btn-royal-outline" style={{ padding: '6px', borderRadius: '50%' }}>
-              <X size={16} />
-            </button>
-          </div>
+          <button 
+            onClick={onClose}
+            style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '30px', height: '30px', cursor: 'pointer', color: '#64748b' }}
+          >
+            
+          </button>
         </div>
 
-        {/* Chat History */}
-        <div style={{
-          flex: 1,
-          padding: '20px',
-          overflowY: 'auto',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '14px'
-        }}>
-          {messages.map((m, idx) => {
-            const isBot = m.sender === 'bot';
-            return (
-              <div 
-                key={idx}
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '10px',
-                  alignSelf: isBot ? 'flex-start' : 'flex-end',
-                  maxWidth: '85%'
-                }}
-              >
-                {isBot && (
-                  <div style={{
-                    width: '30px',
-                    height: '30px',
-                    borderRadius: '8px',
-                    background: 'rgba(212, 175, 55, 0.2)',
-                    border: '1px solid var(--color-gold)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--color-gold)',
-                    flexShrink: 0
-                  }}>
-                    <Crown size={16} />
-                  </div>
-                )}
+        {/* Role Switcher */}
+        <div style={{ display: 'flex', padding: '10px 16px', gap: '6px', background: '#ffffff', borderBottom: '1px solid #f1f5f9' }}>
+          {['client', 'planner', 'vendor', 'founder'].map((r) => (
+            <button
+              key={r}
+              onClick={() => setRole(r)}
+              style={{
+                padding: '4px 10px',
+                borderRadius: '6px',
+                border: role === r ? '1px solid #4f46e5' : '1px solid #e2e8f0',
+                background: role === r ? '#4f46e5' : '#ffffff',
+                color: role === r ? '#ffffff' : '#64748b',
+                fontSize: '0.72rem',
+                fontWeight: 600,
+                textTransform: 'capitalize',
+                cursor: 'pointer',
+                fontFamily: 'inherit'
+              }}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
 
-                <div style={{
-                  background: isBot ? 'rgba(22, 38, 82, 0.75)' : 'var(--color-gold-gradient)',
-                  color: isBot ? '#f8fafc' : '#070d1e',
-                  border: isBot ? '1px solid var(--color-border)' : 'none',
-                  borderRadius: isBot ? '4px 14px 14px 14px' : '14px 4px 14px 14px',
-                  padding: '12px 16px',
-                  fontSize: '0.85rem',
-                  lineHeight: 1.5,
-                  fontWeight: isBot ? 400 : 600,
-                  boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
-                }}>
-                  {m.text}
-                </div>
-              </div>
-            );
-          })}
-
+        {/* Message Log */}
+        <div style={{ flex: 1, padding: '16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {messages.map((m, idx) => (
+            <div 
+              key={idx}
+              style={{
+                alignSelf: m.sender === 'user' ? 'flex-end' : 'flex-start',
+                maxWidth: '82%',
+                background: m.sender === 'user' ? '#4f46e5' : '#f8fafc',
+                color: m.sender === 'user' ? '#ffffff' : '#0f172a',
+                padding: '10px 14px',
+                borderRadius: '10px',
+                fontSize: '0.82rem',
+                border: m.sender === 'user' ? 'none' : '1px solid #e2e8f0',
+                lineHeight: 1.5
+              }}
+            >
+              {m.text}
+            </div>
+          ))}
           {loading && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-gold-light)', fontSize: '0.8rem', paddingLeft: '40px' }}>
-              <Sparkles size={14} className="pulse-glow" />
-              <span>Orchestrating royal response...</span>
+            <div style={{ alignSelf: 'flex-start', color: '#64748b', fontSize: '0.75rem' }}>
+              Processing...
             </div>
           )}
         </div>
 
-        {/* Input Form */}
-        <form onSubmit={handleSend} style={{
-          padding: '14px 20px',
-          borderTop: '1px solid var(--color-border)',
-          background: 'rgba(5, 9, 20, 0.8)',
-          display: 'flex',
-          gap: '10px'
-        }}>
+        {/* Input Field */}
+        <form onSubmit={handleSend} style={{ padding: '12px 16px', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '8px' }}>
           <input
             type="text"
-            placeholder={`Ask anything as ${role.toUpperCase()} (e.g. check catering buffer, milestone due, vendor status)...`}
             value={inputMsg}
             onChange={e => setInputMsg(e.target.value)}
-            style={{
-              flex: 1,
-              background: 'rgba(22, 38, 82, 0.5)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-sm)',
-              padding: '10px 14px',
-              color: '#ffffff',
-              fontSize: '0.85rem',
-              outline: 'none'
-            }}
+            placeholder="Type your instruction or question..."
+            style={{ flex: 1, padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '0.82rem', outline: 'none', fontFamily: 'inherit' }}
           />
-          <button type="submit" disabled={loading} className="btn-royal-gold" style={{ padding: '10px 16px' }}>
-            <Send size={15} />
+          <button type="submit" disabled={loading} className="btn-primary" style={{ padding: '8px 16px' }}>
+            <Send size={13} />
           </button>
         </form>
       </div>

@@ -190,27 +190,27 @@ class GeminiLeadExtractor:
         if not merged.get("destination"):
             next_step = 1
             reply = (
-                f"👑 <b>Welcome to The Royal Knot, {sender_name}!</b>\n\n"
+                f" <b>Welcome to The Royal Knot, {sender_name}!</b>\n\n"
                 "<b>Step 1 of 4: Couple & Destination</b>\n"
                 "Please share the names of the Bride & Groom, and whether your heart is set on <b>Jaipur</b> (Rambagh/Samode) or <b>Udaipur</b> (City Palace/Jagmandir)."
             )
         elif not merged.get("duration_days"):
             next_step = 2
             reply = (
-                f"🏰 <b>Step 2 of 4: Celebration Span & Dates</b>\n\n"
+                f" <b>Step 2 of 4: Celebration Span & Dates</b>\n\n"
                 f"Splendid! For your celebration in <b>{merged['destination']}</b>, how many days are you planning (e.g. 3-day royal affair: Mehendi, Sangeet, Pheras) and do you have tentative preferred dates?"
             )
         elif not merged.get("guest_count"):
             next_step = 3
             reply = (
-                "👥 <b>Step 3 of 4: Guestlist Estimate</b>\n\n"
+                " <b>Step 3 of 4: Guestlist Estimate</b>\n\n"
                 "Approximately how many esteemed guests will grace your celebrations?\n"
                 "<i>(Our ML Turnout Engine will automatically factor outstation buffers & banqueting plates based on this!)</i>"
             )
         elif not merged.get("budget_inr"):
             next_step = 4
             reply = (
-                "💎 <b>Step 4 of 4: Budget & Thematic Vision</b>\n\n"
+                " <b>Step 4 of 4: Budget & Thematic Vision</b>\n\n"
                 "Lastly, what is your anticipated total budget range (e.g. ₹2.0 Cr - ₹3.5 Cr), and any signature elements (vintage car baraat, revolving lotus stage, concert sound)?"
             )
         else:
@@ -218,14 +218,14 @@ class GeminiLeadExtractor:
             b_cr = f"₹{(merged['budget_inr']/10000000):.2f} Cr"
             predicted_pax = int(merged['guest_count'] * 1.17)
             reply = (
-                "✨ <b>YOUR ROYAL ENQUIRY IS OFFICIALLY REGISTERED!</b>\n\n"
+                " <b>YOUR ROYAL ENQUIRY IS OFFICIALLY REGISTERED!</b>\n\n"
                 f"• <b>Couple:</b> {merged.get('couple_names', sender_name)}\n"
                 f"• <b>Destination:</b> {merged['destination']}\n"
                 f"• <b>Duration:</b> {merged.get('duration_days', 3)} Days Celebration\n"
                 f"• <b>Guest Estimate:</b> {merged['guest_count']} Confirmed\n"
                 f"• <b>ML Predicted Turnout:</b> {predicted_pax} Guests (+17% Buffer)\n"
                 f"• <b>Anticipated Budget:</b> {b_cr}\n\n"
-                "📋 <i>Your enquiry has been instantly transmitted to the KnotCore Executive Dashboard. A senior planner is reviewing your portfolio now.</i>"
+                " <i>Your enquiry has been instantly transmitted to the KnotCore Executive Dashboard. A senior planner is reviewing your portfolio now.</i>"
             )
 
         is_completed = (next_step == 5)

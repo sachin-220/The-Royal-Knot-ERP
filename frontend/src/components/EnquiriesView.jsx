@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Users, QrCode, FileText, CheckCircle2, Send, ShieldAlert, Sparkles, 
-  ArrowRight, RefreshCw, Eye, Download, Shield, Clock, Award, AlertCircle,
-  TrendingUp, AlertTriangle, UserCheck, MessageSquare, Flame
+  Users, CheckCircle2, Send, ArrowRight, RefreshCw, Eye, Shield, Clock, 
+  TrendingUp, AlertTriangle, UserCheck, MessageSquare, Flame, Sparkles
 } from 'lucide-react';
 
 export default function EnquiriesView() {
@@ -12,8 +11,6 @@ export default function EnquiriesView() {
   const [actionLoading, setActionLoading] = useState(false);
   const [actionSuccess, setActionSuccess] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // Recovery simulation loading
   const [simulatingRecovery, setSimulatingRecovery] = useState(false);
 
   const fetchInquiries = async () => {
@@ -22,7 +19,6 @@ export default function EnquiriesView() {
       const res = await fetch('http://127.0.0.1:5000/api/leads/conversion-overview');
       const data = await res.json();
       setInquiries(data);
-      // Update selected inquiry if currently open
       if (selectedInquiry) {
         const updated = data.find(i => i.id === selectedInquiry.id);
         if (updated) setSelectedInquiry(updated);
@@ -36,7 +32,7 @@ export default function EnquiriesView() {
 
   useEffect(() => {
     fetchInquiries();
-    const interval = setInterval(fetchInquiries, 10000); // 10s live sync
+    const interval = setInterval(fetchInquiries, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -97,7 +93,6 @@ export default function EnquiriesView() {
     }
   };
 
-  // Simulate Lead Recovery Time Elapsed (48h or 72h)
   const handleSimulateRecovery = async (inquiryId, hours) => {
     try {
       setSimulatingRecovery(true);
@@ -110,10 +105,10 @@ export default function EnquiriesView() {
       if (res.ok) {
         setActionSuccess({
           message: hours >= 72 
-            ? `🚨 72h elapsed! Lead #${inquiryId} automatically reassigned to ${data.assigned_planner}.`
+            ? `72-hour threshold reached. Lead #${inquiryId} automatically reassigned to ${data.assigned_planner}.`
             : hours >= 48 
-            ? `⚠️ 48h elapsed! Lead #${inquiryId} flagged as 'At Risk of Loss'. Customized venue follow-up drafted.`
-            : `Lead #${inquiryId} reset to healthy status (0h elapsed).`
+            ? `48-hour threshold reached. Lead #${inquiryId} flagged as At Risk of Loss. Bespoke venue follow-up drafted.`
+            : `Lead #${inquiryId} reset to healthy status (0 hours elapsed).`
         });
         fetchInquiries();
       }
@@ -124,7 +119,6 @@ export default function EnquiriesView() {
     }
   };
 
-  // Dispatch Venue Follow-Up Message
   const handleSendFollowup = async (inquiryId) => {
     try {
       setActionLoading(true);
@@ -135,7 +129,7 @@ export default function EnquiriesView() {
       const data = await res.json();
       if (res.ok) {
         setActionSuccess({
-          message: data.message
+          message: `Venue follow-up successfully sent to client. Lead status updated to Recovered.`
         });
         fetchInquiries();
       }
@@ -150,113 +144,67 @@ export default function EnquiriesView() {
     ? inquiries 
     : inquiries.filter(i => i.status === filterStatus);
 
-  // Check if any high-value lead is At Risk
   const atRiskLeads = inquiries.filter(i => i.risk_status === 'at_risk' || (i.hours_since_last_response >= 48 && i.risk_status !== 'recovered'));
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
-      {/* Header Bar */}
-      <div className="glass-panel" style={{ padding: '24px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-            <span className="badge badge-gold">CRM Lead Intake & Intelligence</span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Unified Telegram Bot (@Royalknot_bot) • ML Conversion & Recovery Guard</span>
-          </div>
-          <h2 className="font-royal" style={{ fontSize: '1.6rem', fontWeight: 800, margin: 0 }}>
-            User Enquiries, ML Conversion Scoring & Lead Recovery Intelligence
-          </h2>
-          <p style={{ margin: '4px 0 0', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
-            QR Scan $\rightarrow$ 4-Step Dynamic Interview $\rightarrow$ ML Budget-to-Guest Scoring (0-100%) $\rightarrow$ 48h At-Risk Loss Flag $\rightarrow$ 72h Backup Reassignment.
-          </p>
-        </div>
-
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-          <button 
-            onClick={fetchInquiries} 
-            className="btn-royal-outline"
-            style={{ fontSize: '0.78rem', padding: '8px 14px' }}
-          >
-            <RefreshCw size={13} /> Live Refresh
-          </button>
-        </div>
-      </div>
-
-      {/* Action Success Alert Banner */}
-      {actionSuccess && (
-        <div style={{
-          padding: '16px 20px',
-          background: 'rgba(16, 185, 129, 0.15)',
-          border: '1px solid rgba(16, 185, 129, 0.4)',
-          borderRadius: 'var(--radius-md)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          color: '#34d399'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <CheckCircle2 size={18} />
-            <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>{actionSuccess.message}</span>
-          </div>
-          <button onClick={() => setActionSuccess(null)} style={{ background: 'none', border: 'none', color: '#34d399', cursor: 'pointer', fontSize: '1.1rem' }}>✕</button>
-        </div>
-      )}
-
-      {/* STANDOUT FEATURE: 48H AT-RISK LOSS ALERT BANNER */}
+      {/* 48H AT-RISK LOSS ALERT BANNER (No Emojis) */}
       {atRiskLeads.length > 0 && (
         <div style={{
-          padding: '20px 24px',
-          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(185, 28, 28, 0.1) 100%)',
-          border: '1px solid rgba(239, 68, 68, 0.5)',
-          borderRadius: 'var(--radius-md)',
+          padding: '16px 20px',
+          background: '#fef2f2',
+          border: '1px solid #fecaca',
+          borderRadius: '14px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          boxShadow: '0 8px 24px rgba(239, 68, 68, 0.15)'
+          boxShadow: 'var(--shadow-sm)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             <div style={{
-              width: '44px',
-              height: '44px',
+              width: '40px',
+              height: '40px',
               borderRadius: '10px',
-              background: 'rgba(239, 68, 68, 0.25)',
+              background: '#fee2e2',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#f87171',
+              color: '#dc2626',
               flexShrink: 0
             }}>
-              <AlertTriangle size={24} />
+              <AlertTriangle size={20} />
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                <span className="badge badge-amber" style={{ background: 'rgba(239, 68, 68, 0.3)', color: '#fca5a5', border: '1px solid #ef4444' }}>
-                  🚨 FOUNDER STANDOUT FEATURE: AT RISK OF LOSS
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+                <span className="badge badge-ruby">
+                  LEAD RECOVERY ALERT
                 </span>
-                <span style={{ fontSize: '0.75rem', color: '#fca5a5' }}>48h Inaction Detected</span>
+                <span style={{ fontSize: '0.75rem', color: '#991b1b', fontWeight: 600 }}>
+                  48-Hour Inaction Detected
+                </span>
               </div>
-              <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#fef2f2' }}>
-                {atRiskLeads[0].name} ({atRiskLeads[0].preferred_city} • ₹{(atRiskLeads[0].budget_inr / 10000000).toFixed(2)} Cr) has received no planner response for {atRiskLeads[0].hours_since_last_response || 48} hours!
-              </h4>
-              <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#fca5a5', maxWidth: '780px', lineHeight: 1.4 }}>
-                KnotCore Lead Recovery Intelligence has pre-drafted a bespoke venue follow-up customized to <strong>{atRiskLeads[0].preferred_city === 'Jaipur' ? 'Rambagh Palace' : 'Jagmandir Island'}</strong>. Leads untouched after 72 hours are automatically transferred to backup planner <strong>Digvijay Singh Rathore</strong>.
-              </p>
+              <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#991b1b' }}>
+                High-Value Lead: {atRiskLeads[0].name} (₹{(atRiskLeads[0].budget_inr / 10000000).toFixed(2)} Cr, {atRiskLeads[0].preferred_city}) has received no planner response for {atRiskLeads[0].hours_since_last_response || 48} hours.
+              </div>
+              <div style={{ fontSize: '0.78rem', color: '#b91c1c', marginTop: '2px' }}>
+                ML Conversion Likelihood: <strong>{atRiskLeads[0].conversion_score}%</strong>. Bespoke venue follow-up has been drafted for Rambagh Palace.
+              </div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
             <button
               onClick={() => handleSendFollowup(atRiskLeads[0].id)}
-              disabled={actionLoading}
-              className="btn-royal-gold"
-              style={{ fontSize: '0.82rem', padding: '10px 18px', display: 'flex', alignItems: 'center', gap: '6px' }}
+              className="btn-primary"
+              style={{ fontSize: '0.8rem', padding: '8px 16px', background: '#dc2626', borderColor: '#dc2626' }}
             >
-              <Send size={14} /> Send AI Venue Follow-Up
+              <Send size={13} /> Send Follow-Up
             </button>
             <button
               onClick={() => setSelectedInquiry(atRiskLeads[0])}
-              className="btn-royal-outline"
-              style={{ fontSize: '0.82rem', padding: '10px 16px', color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.4)' }}
+              className="btn-outline"
+              style={{ fontSize: '0.8rem', padding: '8px 14px' }}
             >
               Inspect Lead
             </button>
@@ -264,95 +212,110 @@ export default function EnquiriesView() {
         </div>
       )}
 
-      {/* Row: 4 ML Intelligence KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '18px' }}>
-        
-        {/* ML Conversion Likelihood */}
-        <div className="glass-panel" style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>ML CONVERSION AVERAGE</span>
-            <div style={{ padding: '8px', borderRadius: '8px', background: 'rgba(212, 175, 55, 0.15)', color: 'var(--color-gold)' }}>
-              <TrendingUp size={18} />
-            </div>
+      {/* Action Notification */}
+      {actionSuccess && (
+        <div style={{
+          padding: '12px 18px',
+          background: '#ecfdf5',
+          border: '1px solid #a7f3d0',
+          borderRadius: '10px',
+          color: '#065f46',
+          fontSize: '0.84rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <CheckCircle2 size={16} color="#059669" />
+            <span>{actionSuccess.message}</span>
           </div>
-          <div style={{ margin: '14px 0 6px', fontSize: '1.8rem', fontWeight: 800, color: 'var(--color-gold-light)' }} className="font-royal">
+          <button onClick={() => setActionSuccess(null)} style={{ background: 'none', border: 'none', color: '#065f46', cursor: 'pointer', fontSize: '1rem' }}></button>
+        </div>
+      )}
+
+      {/* 4 ML Conversion & SLA Summary Metric Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+        
+        <div className="saas-card" style={{ padding: '20px' }}>
+          <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, letterSpacing: '0.04em', marginBottom: '8px' }}>
+            AVERAGE CONVERSION LIKELIHOOD
+          </div>
+          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0f172a', marginBottom: '4px' }}>
             91.2%
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#34d399', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            ★ Very High Likelihood (Top Tier)
+          <div style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600 }}>
+            Priority 1 Tier (High-Value Leads)
           </div>
         </div>
 
-        {/* Budget-to-Guest Ratio Spend */}
-        <div className="glass-panel" style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>SPEND PER GUEST RATIO</span>
-            <div style={{ padding: '8px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399' }}>
-              <Sparkles size={18} />
-            </div>
+        <div className="saas-card" style={{ padding: '20px' }}>
+          <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, letterSpacing: '0.04em', marginBottom: '8px' }}>
+            SPEND PER GUEST RATIO
           </div>
-          <div style={{ margin: '14px 0 6px', fontSize: '1.8rem', fontWeight: 800, color: '#34d399' }} className="font-royal">
-            ₹57,143 <span style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>/ guest</span>
+          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0f172a', marginBottom: '4px' }}>
+            ₹57,143 <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 400 }}>/ guest</span>
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-            Ultra-Luxury Benchmark: ₹50k+
+          <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+            Ultra-Luxury Benchmark (₹50k+)
           </div>
         </div>
 
-        {/* Winter Peak Season Multiplier */}
-        <div className="glass-panel" style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>WINTER SEASON FACTOR</span>
-            <div style={{ padding: '8px', borderRadius: '8px', background: 'rgba(224, 122, 95, 0.15)', color: 'var(--color-pink-royal)' }}>
-              <Flame size={18} />
-            </div>
+        <div className="saas-card" style={{ padding: '20px' }}>
+          <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, letterSpacing: '0.04em', marginBottom: '8px' }}>
+            SEASON FACTOR
           </div>
-          <div style={{ margin: '14px 0 6px', fontSize: '1.8rem', fontWeight: 800, color: 'var(--color-pink-royal)' }} className="font-royal">
+          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0f172a', marginBottom: '4px' }}>
             95 / 100
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+          <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
             Peak Winter Season (Nov - Feb)
           </div>
         </div>
 
-        {/* Recovery SLA Intelligence */}
-        <div className="glass-panel" style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>RECOVERY INTELLIGENCE</span>
-            <div style={{ padding: '8px', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa' }}>
-              <Clock size={18} />
-            </div>
+        <div className="saas-card" style={{ padding: '20px' }}>
+          <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, letterSpacing: '0.04em', marginBottom: '8px' }}>
+            SLA RECOVERY GUARD
           </div>
-          <div style={{ margin: '14px 0 6px', fontSize: '1.8rem', fontWeight: 800, color: '#60a5fa' }} className="font-royal">
+          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#4f46e5', marginBottom: '4px' }}>
             48h / 72h
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-            48h Risk Flag • 72h Auto Reassign
+          <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+            48h Inaction Flag • 72h Reassignment
           </div>
         </div>
 
       </div>
 
       {/* Main Table: User Enquiries & ML Prediction */}
-      <div className="glass-panel" style={{ padding: '24px' }}>
+      <div className="saas-card" style={{ padding: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
           <div>
-            <h3 className="font-royal" style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700 }}>
-              Incoming Royal Enquiries & ML Lead Conversion Ledger
+            <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: '#0f172a' }}>
+              Enquiries & Lead Conversion Ledger
             </h3>
-            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-              Real-time ingestion from Telegram @Royalknot_bot • Budget-to-guest ratio model • Lead recovery SLA
-            </span>
+            <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+              Live intake from Telegram @Royalknot_bot with ML budget-to-guest evaluation and 48-hour recovery guard.
+            </p>
           </div>
 
           {/* Filter Pills */}
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '6px' }}>
             {['ALL', 'new', 'proposal_sent', 'signed', 'rfp_broadcast'].map((st) => (
               <button
                 key={st}
                 onClick={() => setFilterStatus(st)}
-                className={filterStatus === st ? 'btn-royal-gold' : 'btn-royal-outline'}
-                style={{ padding: '5px 12px', fontSize: '0.75rem', textTransform: 'uppercase' }}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  border: filterStatus === st ? '1px solid #4f46e5' : '1px solid #e2e8f0',
+                  background: filterStatus === st ? '#4f46e5' : '#ffffff',
+                  color: filterStatus === st ? '#ffffff' : '#64748b',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textTransform: 'uppercase',
+                  fontFamily: 'inherit'
+                }}
               >
                 {st.replace('_', ' ')}
               </button>
@@ -362,18 +325,18 @@ export default function EnquiriesView() {
 
         {/* Table */}
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+          <table>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-muted)', fontSize: '0.75rem' }}>
-                <th style={{ padding: '12px 14px' }}>INQUIRY REF</th>
-                <th style={{ padding: '12px 14px' }}>COUPLE / CLIENT</th>
-                <th style={{ padding: '12px 14px' }}>DESTINATION & GUESTS</th>
-                <th style={{ padding: '12px 14px' }}>BUDGET (INR)</th>
-                <th style={{ padding: '12px 14px' }}>ML CONVERSION (0-100%)</th>
-                <th style={{ padding: '12px 14px' }}>RECOVERY RISK (48H/72H)</th>
-                <th style={{ padding: '12px 14px' }}>ASSIGNED PLANNER</th>
-                <th style={{ padding: '12px 14px' }}>STATUS</th>
-                <th style={{ padding: '12px 14px', textAlign: 'right' }}>ACTION</th>
+              <tr>
+                <th>INQUIRY REF</th>
+                <th>CLIENT / CONTACT</th>
+                <th>DESTINATION & GUESTS</th>
+                <th>BUDGET</th>
+                <th>ML CONVERSION (0-100%)</th>
+                <th>RECOVERY STATUS</th>
+                <th>ASSIGNED PLANNER</th>
+                <th>STATUS</th>
+                <th style={{ textAlign: 'right' }}>ACTION</th>
               </tr>
             </thead>
             <tbody>
@@ -389,115 +352,92 @@ export default function EnquiriesView() {
                   <tr 
                     key={inq.id}
                     style={{ 
-                      borderBottom: '1px solid rgba(255,255,255,0.05)',
-                      background: isAtRisk ? 'rgba(239, 68, 68, 0.05)' : isReassigned ? 'rgba(147, 51, 234, 0.05)' : 'transparent',
-                      transition: 'background 0.2s'
+                      background: isAtRisk ? '#fef2f2' : isReassigned ? '#faf5ff' : 'transparent',
+                      transition: 'background 0.15s'
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(212, 175, 55, 0.05)'}
-                    onMouseLeave={e => e.currentTarget.style.background = isAtRisk ? 'rgba(239, 68, 68, 0.05)' : isReassigned ? 'rgba(147, 51, 234, 0.05)' : 'transparent'}
                   >
-                    {/* Ref */}
-                    <td style={{ padding: '14px', fontWeight: 800, color: 'var(--color-gold)', fontFamily: 'monospace' }}>
+                    <td style={{ fontWeight: 700, color: '#4f46e5', fontFamily: 'monospace' }}>
                       INQ-{inq.id.toString().padStart(4, '0')}
                     </td>
 
-                    {/* Client */}
-                    <td style={{ padding: '14px', fontWeight: 700 }}>
-                      <div>{inq.name}</div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--color-text-dim)', fontWeight: 400 }}>
+                    <td>
+                      <div style={{ fontWeight: 600, color: '#0f172a' }}>{inq.name}</div>
+                      <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
                         {inq.phone || '+91 97722 33445'} • {inq.telegram_id || '@client'}
                       </div>
                     </td>
 
-                    {/* Destination & Guests */}
-                    <td style={{ padding: '14px' }}>
-                      <span style={{ color: 'var(--color-gold-light)', fontWeight: 600 }}>
+                    <td>
+                      <div style={{ fontWeight: 500, color: '#0f172a' }}>
                         {inq.preferred_city} ({inq.duration_days || 3} Days)
-                      </span>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
                         {inq.guest_count} Confirmed Guests
                       </div>
                     </td>
 
-                    {/* Budget */}
-                    <td style={{ padding: '14px', fontFamily: 'monospace', fontWeight: 700, color: 'var(--color-gold-light)' }}>
+                    <td style={{ fontFamily: 'monospace', fontWeight: 600, color: '#0f172a' }}>
                       {budgetCr}
-                      <div style={{ fontSize: '0.68rem', color: '#34d399' }}>
+                      <div style={{ fontSize: '0.7rem', color: '#10b981' }}>
                         ₹{Math.round((inq.budget_inr || 20000000) / (inq.guest_count || 350)).toLocaleString('en-IN')}/guest
                       </div>
                     </td>
 
-                    {/* ML Conversion Score (0 - 100%) */}
-                    <td style={{ padding: '14px' }}>
+                    <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                        <span style={{
-                          fontWeight: 800,
-                          fontSize: '1rem',
-                          color: score >= 80 ? 'var(--color-gold-light)' : score >= 60 ? '#60a5fa' : '#f87171'
-                        }}>
+                        <span style={{ fontWeight: 700, fontSize: '0.9rem', color: score >= 80 ? '#059669' : '#4f46e5' }}>
                           {score.toFixed(1)}%
                         </span>
-                        <span className="badge badge-gold" style={{ fontSize: '0.62rem', padding: '1px 6px' }}>
+                        <span className="badge badge-primary" style={{ fontSize: '0.65rem' }}>
                           {inq.conversion_tier || 'Very High'}
                         </span>
                       </div>
-                      <div style={{ width: '100px', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
-                        <div style={{
-                          width: `${score}%`,
-                          height: '100%',
-                          background: score >= 80 ? 'var(--color-gold-gradient)' : '#60a5fa'
-                        }} />
+                      <div style={{ width: '90px', height: '5px', background: '#e2e8f0', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{ width: `${score}%`, height: '100%', background: '#10b981' }} />
                       </div>
                     </td>
 
-                    {/* Recovery Risk Status (48h / 72h) */}
-                    <td style={{ padding: '14px' }}>
+                    <td>
                       {isReassigned ? (
-                        <span className="badge" style={{ background: 'rgba(147, 51, 234, 0.2)', color: '#c084fc', border: '1px solid rgba(147, 51, 234, 0.4)', fontSize: '0.68rem' }}>
-                          <UserCheck size={11} style={{ marginRight: '3px', verticalAlign: '-1px' }} />
+                        <span className="badge badge-ruby" style={{ background: '#faf5ff', color: '#7c3aed', borderColor: '#ddd6fe' }}>
                           72h Reassigned
                         </span>
                       ) : isAtRisk ? (
-                        <span className="badge badge-amber" style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.4)', fontSize: '0.68rem' }}>
-                          <AlertTriangle size={11} style={{ marginRight: '3px', verticalAlign: '-1px' }} />
+                        <span className="badge badge-ruby">
                           At Risk of Loss (48h)
                         </span>
                       ) : (
-                        <span className="badge badge-emerald" style={{ fontSize: '0.68rem' }}>
-                          <CheckCircle2 size={11} style={{ marginRight: '3px', verticalAlign: '-1px' }} />
+                        <span className="badge badge-emerald">
                           Healthy (&lt;48h)
                         </span>
                       )}
                     </td>
 
-                    {/* Assigned Planner */}
-                    <td style={{ padding: '14px', fontSize: '0.78rem' }}>
-                      <div style={{ fontWeight: 600, color: isReassigned ? '#c084fc' : '#f8fafc' }}>
+                    <td style={{ fontSize: '0.78rem' }}>
+                      <div style={{ fontWeight: 600, color: '#0f172a' }}>
                         {inq.assigned_planner || 'Welcome (Lead Planner)'}
                       </div>
-                      <div style={{ fontSize: '0.68rem', color: 'var(--color-text-dim)' }}>
+                      <div style={{ fontSize: '0.7rem', color: '#64748b' }}>
                         Backup: {inq.backup_planner ? 'Digvijay S.' : 'Digvijay S. Rathore'}
                       </div>
                     </td>
 
-                    {/* Status */}
-                    <td style={{ padding: '14px' }}>
+                    <td>
                       <span className={`badge ${
                         isSigned ? 'badge-emerald' : 
-                        isPropSent ? 'badge-sapphire' : 'badge-amber'
-                      }`} style={{ fontSize: '0.68rem' }}>
+                        isPropSent ? 'badge-primary' : 'badge-amber'
+                      }`}>
                         {inq.status.replace('_', ' ').toUpperCase()}
                       </span>
                     </td>
 
-                    {/* Action */}
-                    <td style={{ padding: '14px', textAlign: 'right' }}>
+                    <td style={{ textAlign: 'right' }}>
                       <button
                         onClick={() => setSelectedInquiry(inq)}
-                        className="btn-royal-gold"
-                        style={{ padding: '6px 14px', fontSize: '0.75rem' }}
+                        className="btn-outline"
+                        style={{ padding: '6px 12px', fontSize: '0.75rem' }}
                       >
-                        Take Action & SLA <ArrowRight size={13} />
+                        Details & SLA <ArrowRight size={12} />
                       </button>
                     </td>
                   </tr>
@@ -508,259 +448,237 @@ export default function EnquiriesView() {
         </div>
       </div>
 
-      {/* Action & Lead Recovery Drawer Modal */}
+      {/* Inquiry Detail & Action Drawer (Clean Light SaaS Modal) */}
       {selectedInquiry && (
         <div style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.8)',
+          background: 'rgba(15, 23, 42, 0.6)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 1000,
-          backdropFilter: 'blur(8px)'
+          backdropFilter: 'blur(4px)'
         }}>
-          <div className="glass-panel" style={{
-            width: '680px',
-            maxHeight: '92vh',
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            width: '640px',
+            maxHeight: '90vh',
             overflowY: 'auto',
             padding: '28px',
-            boxShadow: 'var(--shadow-elevated)'
+            boxShadow: 'var(--shadow-elevated)',
+            border: '1px solid #e2e8f0'
           }}>
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                  <span className="badge badge-gold" style={{ fontSize: '0.7rem' }}>
-                    PROTOCOL INQ-{selectedInquiry.id.toString().padStart(4, '0')}
+                  <span className="badge badge-primary">
+                    INQUIRY #{selectedInquiry.id.toString().padStart(4, '0')}
                   </span>
                   {selectedInquiry.risk_status === 'at_risk' && (
-                    <span className="badge badge-amber" style={{ background: 'rgba(239, 68, 68, 0.25)', color: '#f87171' }}>
-                      🚨 AT RISK OF LOSS (48H SLA)
+                    <span className="badge badge-ruby">
+                      AT RISK OF LOSS (48H SLA)
                     </span>
                   )}
                   {selectedInquiry.risk_status === 'reassigned' && (
-                    <span className="badge" style={{ background: 'rgba(147, 51, 234, 0.25)', color: '#c084fc' }}>
-                      🔄 REASSIGNED (72H SLA)
+                    <span className="badge" style={{ background: '#faf5ff', color: '#7c3aed', borderColor: '#ddd6fe' }}>
+                      REASSIGNED (72H SLA)
                     </span>
                   )}
                 </div>
-                <h3 className="font-royal" style={{ margin: '4px 0 0', fontSize: '1.45rem', fontWeight: 800 }}>
+                <h3 style={{ margin: '4px 0 0', fontSize: '1.3rem', fontWeight: 700, color: '#0f172a' }}>
                   {selectedInquiry.name}
                 </h3>
-                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                  {selectedInquiry.preferred_city} • {selectedInquiry.duration_days || 3} Days • Telegram: {selectedInquiry.telegram_id} • Assigned: <strong style={{ color: '#f8fafc' }}>{selectedInquiry.assigned_planner || 'Welcome (Lead Planner)'}</strong>
+                <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                  {selectedInquiry.preferred_city} • {selectedInquiry.duration_days || 3} Days • Assigned: <strong>{selectedInquiry.assigned_planner || 'Welcome (Lead Planner)'}</strong>
                 </div>
               </div>
               <button 
                 onClick={() => setSelectedInquiry(null)}
-                className="btn-royal-outline"
-                style={{ padding: '6px 10px' }}
+                style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', color: '#64748b', fontSize: '1rem' }}
               >
-                ✕
+                
               </button>
             </div>
 
-            {/* 1. ML Lead Conversion Prediction Scoring Breakdown */}
+            {/* 1. ML Lead Conversion Scoring Parameters */}
             <div style={{
-              background: 'rgba(5, 9, 20, 0.75)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-sm)',
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: '12px',
               padding: '16px',
               marginBottom: '18px'
             }}>
-              <div style={{ fontSize: '0.8rem', color: 'var(--color-gold)', fontWeight: 700, marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Sparkles size={14} /> ML CONVERSION PREDICTION SCORING ENGINE (0% - 100%)
-                </span>
-                <span style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--color-gold-light)' }}>
-                  {parseFloat(selectedInquiry.conversion_score || 91.2).toFixed(1)}% Conversion Likelihood
+              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a', marginBottom: '12px', display: 'flex', justifyContent: 'space-between' }}>
+                <span>ML Conversion Likelihood Model</span>
+                <span style={{ color: '#4f46e5', fontWeight: 800 }}>
+                  {parseFloat(selectedInquiry.conversion_score || 91.2).toFixed(1)}% Likelihood
                 </span>
               </div>
 
-              {/* 4 ML Model Parameters */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
-                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '6px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)' }}>BUDGET / GUEST</div>
-                  <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--color-gold-light)' }}>90.0</div>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--color-text-dim)' }}>₹57.1k/guest</div>
+                <div style={{ background: '#ffffff', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.68rem', color: '#64748b' }}>BUDGET / GUEST</div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a' }}>90.0</div>
+                  <div style={{ fontSize: '0.65rem', color: '#64748b' }}>₹57.1k/guest</div>
                 </div>
 
-                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '6px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)' }}>WINTER SEASON</div>
-                  <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--color-gold-light)' }}>95.0</div>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--color-text-dim)' }}>Nov - Feb Peak</div>
+                <div style={{ background: '#ffffff', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.68rem', color: '#64748b' }}>WINTER SEASON</div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a' }}>95.0</div>
+                  <div style={{ fontSize: '0.65rem', color: '#64748b' }}>Nov - Feb Peak</div>
                 </div>
 
-                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '6px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)' }}>VENUE TIER</div>
-                  <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--color-gold-light)' }}>92.0</div>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--color-text-dim)' }}>Heritage Palace</div>
+                <div style={{ background: '#ffffff', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.68rem', color: '#64748b' }}>VENUE TIER</div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a' }}>92.0</div>
+                  <div style={{ fontSize: '0.65rem', color: '#64748b' }}>Heritage Palace</div>
                 </div>
 
-                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '6px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)' }}>SENTIMENT</div>
-                  <div style={{ fontSize: '1rem', fontWeight: 800, color: '#34d399' }}>88.0</div>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--color-text-dim)' }}>High Delight</div>
+                <div style={{ background: '#ffffff', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.68rem', color: '#64748b' }}>SENTIMENT</div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#10b981' }}>88.0</div>
+                  <div style={{ fontSize: '0.65rem', color: '#64748b' }}>High Delight</div>
                 </div>
               </div>
             </div>
 
-            {/* 2. STANDOUT FEATURE: LEAD RECOVERY INTELLIGENCE CONSOLE */}
+            {/* 2. STANDOUT FEATURE: LEAD RECOVERY INTELLIGENCE */}
             <div style={{
-              background: 'rgba(13, 22, 48, 0.7)',
-              border: selectedInquiry.risk_status === 'at_risk' ? '1px solid rgba(239, 68, 68, 0.5)' : '1px solid rgba(59, 130, 246, 0.3)',
-              borderRadius: 'var(--radius-sm)',
+              background: '#f8fafc',
+              border: selectedInquiry.risk_status === 'at_risk' ? '1px solid #fca5a5' : '1px solid #e2e8f0',
+              borderRadius: '12px',
               padding: '16px',
-              marginBottom: '20px'
+              marginBottom: '18px'
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: selectedInquiry.risk_status === 'at_risk' ? '#f87171' : '#60a5fa', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <ShieldAlert size={15} /> STANDOUT FEATURE: LEAD RECOVERY INTELLIGENCE
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: selectedInquiry.risk_status === 'at_risk' ? '#dc2626' : '#0f172a' }}>
+                  Lead Recovery Intelligence Console
                 </span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-dim)' }}>
-                  Inactivity Clock: <strong style={{ color: selectedInquiry.hours_since_last_response >= 48 ? '#f87171' : 'var(--color-gold-light)' }}>{selectedInquiry.hours_since_last_response || 0} Hours Elapsed</strong>
+                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                  Inactivity Clock: <strong>{selectedInquiry.hours_since_last_response || 0} Hours Elapsed</strong>
                 </span>
               </div>
 
               {/* Venue-Customized Follow-Up Draft */}
-              <div style={{ background: 'rgba(5, 9, 20, 0.7)', padding: '12px 14px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.06)', marginBottom: '12px' }}>
-                <div style={{ fontSize: '0.72rem', color: 'var(--color-gold)', fontWeight: 600, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <MessageSquare size={12} /> AI CUSTOMIZED FOLLOW-UP DRAFT (Tailored to {selectedInquiry.preferred_city === 'Jaipur' ? 'Rambagh Palace, Jaipur' : 'Jagmandir Island, Udaipur'}):
+              <div style={{ background: '#ffffff', padding: '12px 14px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '12px' }}>
+                <div style={{ fontSize: '0.72rem', color: '#4f46e5', fontWeight: 600, marginBottom: '6px' }}>
+                  Suggested Follow-Up Message (Customized to {selectedInquiry.preferred_city === 'Jaipur' ? 'Rambagh Palace' : 'Jagmandir Island'}):
                 </div>
-                <p style={{ margin: 0, fontSize: '0.78rem', color: '#f8fafc', lineHeight: 1.5, fontStyle: 'italic' }}>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: '#334155', lineHeight: 1.5 }}>
                   "{selectedInquiry.follow_up_draft || `Padharo Sa ${selectedInquiry.name},\nWe are actively holding prime heritage pavilion dates for your 3-day wedding celebration at Rambagh Palace, Jaipur. Our Executive Banqueting Chef has pre-calculated a 524-plate tasting menu. Given high winter season demand in Jaipur, shall we confirm your palace date lock today?`}"
                 </p>
               </div>
 
-              {/* Dispatch Draft Button & Simulation Controls */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+              {/* Action & Simulation Buttons */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                 <button
                   onClick={() => handleSendFollowup(selectedInquiry.id)}
                   disabled={actionLoading}
-                  className="btn-royal-gold"
-                  style={{ fontSize: '0.78rem', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  className="btn-primary"
+                  style={{ fontSize: '0.78rem', padding: '8px 16px' }}
                 >
-                  <Send size={13} /> {actionLoading ? 'Dispatching...' : '⚡ Send Venue Follow-Up to Telegram'}
+                  <Send size={13} /> {actionLoading ? 'Dispatching...' : 'Send Follow-Up to Telegram'}
                 </button>
 
-                {/* Simulation Time Buttons */}
                 <div style={{ display: 'flex', gap: '6px' }}>
                   <button
                     onClick={() => handleSimulateRecovery(selectedInquiry.id, 48)}
                     disabled={simulatingRecovery}
-                    className="btn-royal-outline"
-                    style={{ fontSize: '0.7rem', padding: '6px 10px', color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.4)' }}
-                    title="Simulate 48 hours without planner response: triggers 'At Risk of Loss' flag on Founder Dashboard"
+                    className="btn-outline"
+                    style={{ fontSize: '0.72rem', padding: '6px 10px', color: '#dc2626', borderColor: '#fca5a5' }}
                   >
-                    ⏱️ Simulate 48h (Trigger Risk)
+                    Simulate 48h (Trigger Risk)
                   </button>
 
                   <button
                     onClick={() => handleSimulateRecovery(selectedInquiry.id, 72)}
                     disabled={simulatingRecovery}
-                    className="btn-royal-outline"
-                    style={{ fontSize: '0.7rem', padding: '6px 10px', color: '#c084fc', borderColor: 'rgba(147, 51, 234, 0.4)' }}
-                    title="Simulate 72 hours untouched: automatically reassigns lead to backup planner Digvijay Singh Rathore"
+                    className="btn-outline"
+                    style={{ fontSize: '0.72rem', padding: '6px 10px', color: '#7c3aed', borderColor: '#ddd6fe' }}
                   >
-                    🚨 Simulate 72h (Auto-Reassign)
+                    Simulate 72h (Auto-Reassign)
                   </button>
 
                   <button
                     onClick={() => handleSimulateRecovery(selectedInquiry.id, 0)}
                     disabled={simulatingRecovery}
-                    className="btn-royal-outline"
-                    style={{ fontSize: '0.7rem', padding: '6px 10px' }}
-                    title="Reset lead inactivity clock to 0 hours"
+                    className="btn-outline"
+                    style={{ fontSize: '0.72rem', padding: '6px 10px' }}
                   >
-                    🔄 Reset (0h)
+                    Reset (0h)
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* 3. CRM ACTION PROTOCOL (PDF Proposal, Signing, RFP Broadcast) */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              
-              {/* Action 1: Compile PDF Proposal & Send to Client Bot */}
-              <div style={{ background: 'rgba(22, 38, 82, 0.4)', padding: '12px 16px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            {/* 3. CRM Workflow Actions */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#f8fafc' }}>
-                    1. Luxury Proposal PDF Generation & Bot Dispatch
-                  </div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
-                    Runs ReportLab engine, formats 18 categories, and prompts client in Telegram.
-                  </div>
+                  <div style={{ fontWeight: 600, fontSize: '0.82rem', color: '#0f172a' }}>1. Generate Luxury Proposal PDF</div>
+                  <div style={{ fontSize: '0.72rem', color: '#64748b' }}>Compiles 18 categories and delivers proposal via Telegram.</div>
                 </div>
                 <button
                   onClick={() => handleTakeAction(selectedInquiry.id)}
                   disabled={actionLoading}
-                  className="btn-royal-gold"
-                  style={{ fontSize: '0.75rem', padding: '7px 14px', flexShrink: 0 }}
+                  className="btn-primary"
+                  style={{ fontSize: '0.75rem', padding: '6px 12px' }}
                 >
-                  {actionLoading ? 'Compiling...' : '⚡ Generate & Send PDF'}
+                  {actionLoading ? 'Generating...' : 'Generate PDF'}
                 </button>
               </div>
 
-              {/* Action 2: Digital Counter-Signature & Advance Confirmation */}
-              <div style={{ background: 'rgba(16, 185, 129, 0.08)', padding: '12px 16px', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(16, 185, 129, 0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#34d399' }}>
-                    2. Confirm Digital Signing & Advance Paid
-                  </div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
-                    Locks booking date, advances 30% milestone deposit into escrow.
-                  </div>
+                  <div style={{ fontWeight: 600, fontSize: '0.82rem', color: '#0f172a' }}>2. Confirm Counter-Signature</div>
+                  <div style={{ fontSize: '0.72rem', color: '#64748b' }}>Locks booking dates and confirms 30% advance deposit.</div>
                 </div>
                 <button
                   onClick={() => handleConfirmSigning(selectedInquiry.id)}
                   disabled={actionLoading}
-                  className="btn-royal-outline"
-                  style={{ fontSize: '0.75rem', padding: '7px 14px', color: '#34d399', borderColor: 'rgba(16,185,129,0.4)', flexShrink: 0 }}
+                  className="btn-outline"
+                  style={{ fontSize: '0.75rem', padding: '6px 12px' }}
                 >
-                  ✍️ Confirm Signed
+                  Confirm Signed
                 </button>
               </div>
 
-              {/* Action 3: Release to One-Way Mirror Vendor Group */}
-              <div style={{ background: 'rgba(59, 130, 246, 0.08)', padding: '12px 16px', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(59, 130, 246, 0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#60a5fa' }}>
-                    3. Release RFQs to One-Way Mirror Vendor Group
-                  </div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
-                    Blind bidding: competing vendors cannot view rival quotes; platform receives all bids.
-                  </div>
+                  <div style={{ fontWeight: 600, fontSize: '0.82rem', color: '#0f172a' }}>3. Broadcast Blind RFPs to Vendors</div>
+                  <div style={{ fontSize: '0.72rem', color: '#64748b' }}>Releases One-Way Mirror RFQ to vendor network.</div>
                 </div>
                 <button
                   onClick={() => handleBroadcastRFP(selectedInquiry.id)}
                   disabled={actionLoading}
-                  className="btn-royal-outline"
-                  style={{ fontSize: '0.75rem', padding: '7px 14px', color: '#60a5fa', borderColor: 'rgba(59,130,246,0.4)', flexShrink: 0 }}
+                  className="btn-outline"
+                  style={{ fontSize: '0.75rem', padding: '6px 12px' }}
                 >
-                  📢 Broadcast Blind RFPs
+                  Broadcast RFPs
                 </button>
               </div>
-
             </div>
 
             {/* Footer */}
-            <div style={{ marginTop: '18px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <a 
                 href="/Aarav_Diya_Proposal.pdf" 
                 target="_blank" 
                 rel="noreferrer"
-                className="btn-royal-outline"
+                className="btn-outline"
                 style={{ fontSize: '0.75rem' }}
               >
-                <Eye size={13} /> View Sample Proposal PDF
+                <Eye size={13} /> View Proposal PDF
               </a>
               <button 
                 onClick={() => setSelectedInquiry(null)}
-                className="btn-royal-gold"
-                style={{ fontSize: '0.78rem', padding: '8px 18px' }}
+                className="btn-primary"
+                style={{ fontSize: '0.78rem', padding: '6px 16px' }}
               >
-                Close Drawer
+                Close
               </button>
             </div>
           </div>

@@ -86,7 +86,7 @@ class WeddingWebController(http.Controller):
             </head>
             <body>
                 <div class="card">
-                    <div class="badge">✓ Digitally Executed &amp; Locked</div>
+                    <div class="badge"> Digitally Executed &amp; Locked</div>
                     <h1>Royal Service Agreement Confirmed</h1>
                     <p>Dear <b>{agreement.partner_id.name}</b>,</p>
                     <p>Your luxury wedding agreement for <b>{agreement.wedding_id.name}</b> has been signed successfully. Our planning team has initiated your 28-task master event graph.</p>
@@ -127,7 +127,7 @@ class WeddingWebController(http.Controller):
                 </div>
                 <form method="POST">
                     <p style="font-size: 13px; color: #666;">By tapping below, you agree to The Royal Knot terms, 3-stage milestone billing, and confirm authorization on mobile.</p>
-                    <button type="submit" class="btn">✍️ Digitally Sign &amp; Confirm Wedding</button>
+                    <button type="submit" class="btn">️ Digitally Sign &amp; Confirm Wedding</button>
                 </form>
             </div>
         </body>

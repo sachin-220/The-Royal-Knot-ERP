@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Clock, AlertTriangle, CheckCircle2, Play, RefreshCw, 
-  Truck, ShieldAlert, Plus, MapPin, ChevronRight, Activity 
+  Truck, ShieldAlert, Plus, MapPin, ChevronRight, Activity, Check
 } from 'lucide-react';
 
 export default function OperationsView({ weddingId }) {
@@ -10,7 +10,7 @@ export default function OperationsView({ weddingId }) {
   const [incidents, setIncidents] = useState([]);
   const [fleet, setFleet] = useState([]);
   const [activeStage, setActiveStage] = useState('ALL');
-  const [selectedDay, setSelectedDay] = useState(2); // Default to Day 2 (Baraat & Pheras)
+  const [selectedDay, setSelectedDay] = useState(2);
   const [showIncidentModal, setShowIncidentModal] = useState(false);
   const [incidentForm, setIncidentForm] = useState({ title: '', severity: 'high', location: '', action_taken: '' });
   const [simulatingTaskId, setSimulatingTaskId] = useState(null);
@@ -102,55 +102,80 @@ export default function OperationsView({ weddingId }) {
   const filteredRunSheet = runSheet.filter(item => item.day_number === selectedDay);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
-      {/* Header Bar */}
-      <div className="glass-panel" style={{ padding: '24px 30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-            <span className="badge badge-gold">Operations Command Centre</span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>26 Tasks DAG • Ripple Delay Engine</span>
+      {/* Metric Cards Row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+        <div className="saas-card" style={{ padding: '20px' }}>
+          <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, letterSpacing: '0.04em', marginBottom: '8px' }}>
+            CRITICAL PATH TASKS
           </div>
-          <h2 className="font-royal" style={{ fontSize: '1.6rem', fontWeight: 800, margin: 0 }}>
-            Palace Ground Operations & Minute-by-Minute Run Sheet
-          </h2>
-          <p style={{ margin: '4px 0 0', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
-            Live execution tracking with real-time incident desk and GPS fleet logistics.
-          </p>
+          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0f172a', marginBottom: '4px' }}>
+            26 Tasks
+          </div>
+          <div style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600 }}>
+            Dynamic DAG Dependency Model
+          </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button 
-            onClick={() => setShowIncidentModal(true)}
-            className="btn-royal-outline" 
-            style={{ color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.4)' }}
-          >
-            <ShieldAlert size={16} />
-            <span>Report Emergency Incident</span>
-          </button>
+        <div className="saas-card" style={{ padding: '20px' }}>
+          <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, letterSpacing: '0.04em', marginBottom: '8px' }}>
+            ACTIVE INCIDENTS
+          </div>
+          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: incidents.filter(i => i.status !== 'resolved').length > 0 ? '#dc2626' : '#059669', marginBottom: '4px' }}>
+            {incidents.filter(i => i.status !== 'resolved').length} Alerts
+          </div>
+          <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+            Emergency Resolution Desk
+          </div>
+        </div>
 
-          <button onClick={fetchOperationsData} className="btn-royal-outline">
-            <RefreshCw size={15} />
-            <span>Sync Live</span>
-          </button>
+        <div className="saas-card" style={{ padding: '20px' }}>
+          <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, letterSpacing: '0.04em', marginBottom: '8px' }}>
+            TRANSIT FLEET
+          </div>
+          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#4f46e5', marginBottom: '4px' }}>
+            {fleet.length} Vehicles
+          </div>
+          <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+            Live GPS Tracking
+          </div>
+        </div>
+
+        <div className="saas-card" style={{ padding: '20px' }}>
+          <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, letterSpacing: '0.04em', marginBottom: '8px' }}>
+            RUN SHEET PROGRESSION
+          </div>
+          <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0f172a', marginBottom: '4px' }}>
+            Day {selectedDay} Active
+          </div>
+          <div style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600 }}>
+            Ceremony Sequence Synced
+          </div>
         </div>
       </div>
 
-      {/* Row 1: Active Incidents & Fleet Logistics */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '20px' }}>
+      {/* Incidents Desk & Fleet Logistics */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '16px' }}>
         
         {/* Incidents Desk */}
-        <div className="glass-panel" style={{ padding: '22px' }}>
+        <div className="saas-card" style={{ padding: '22px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <ShieldAlert size={18} color="#f87171" />
-              <h3 className="font-royal" style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700 }}>
-                Emergency Incident Desk (Active Alerts)
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#0f172a' }}>
+                Incident Resolution Desk
               </h3>
+              <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#64748b' }}>
+                Operational safeguards and fast mitigation protocols.
+              </p>
             </div>
-            <span className="badge badge-ruby" style={{ fontSize: '0.7rem' }}>
-              {incidents.filter(i => i.status !== 'resolved').length} Active
-            </span>
+            <button 
+              onClick={() => setShowIncidentModal(true)}
+              className="btn-outline" 
+              style={{ fontSize: '0.75rem', padding: '6px 12px', color: '#dc2626', borderColor: '#fca5a5' }}
+            >
+              Report Incident
+            </button>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -158,34 +183,34 @@ export default function OperationsView({ weddingId }) {
               <div 
                 key={inc.id}
                 style={{
-                  background: inc.status === 'resolved' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.1)',
-                  border: `1px solid ${inc.status === 'resolved' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.35)'}`,
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '14px 18px'
+                  background: inc.status === 'resolved' ? '#f0fdf4' : '#fef2f2',
+                  border: `1px solid ${inc.status === 'resolved' ? '#bbf7d0' : '#fecaca'}`,
+                  borderRadius: '10px',
+                  padding: '12px 16px'
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontWeight: 800, color: inc.status === 'resolved' ? '#34d399' : '#f87171', fontSize: '0.85rem' }}>
+                    <span style={{ fontWeight: 700, color: inc.status === 'resolved' ? '#059669' : '#dc2626', fontSize: '0.82rem' }}>
                       {inc.incident_code}
                     </span>
                     <span className={`badge ${inc.severity === 'critical' ? 'badge-ruby' : 'badge-amber'}`} style={{ fontSize: '0.65rem' }}>
-                      {inc.severity}
+                      {inc.severity.toUpperCase()}
                     </span>
                   </div>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--color-text-dim)' }}>
-                    {inc.status === 'resolved' ? '✓ Resolved' : '⚡ Action In Progress'}
+                  <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                    {inc.status === 'resolved' ? 'Resolved' : 'Action In Progress'}
                   </span>
                 </div>
 
-                <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '4px' }}>
+                <div style={{ fontWeight: 600, fontSize: '0.86rem', color: '#0f172a', marginBottom: '2px' }}>
                   {inc.title}
                 </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--color-pink-royal)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <MapPin size={12} /> {inc.location}
+                <div style={{ fontSize: '0.74rem', color: '#64748b', marginBottom: '6px' }}>
+                  Location: {inc.location}
                 </div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', background: 'rgba(5, 9, 20, 0.4)', padding: '8px 12px', borderRadius: '4px' }}>
-                  <strong style={{ color: 'var(--color-gold-light)' }}>Action Taken:</strong> {inc.action_taken}
+                <div style={{ fontSize: '0.76rem', color: '#334155', background: '#ffffff', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                  <strong>Action:</strong> {inc.action_taken}
                 </div>
               </div>
             ))}
@@ -193,47 +218,49 @@ export default function OperationsView({ weddingId }) {
         </div>
 
         {/* Venue GeoTracker Fleet */}
-        <div className="glass-panel" style={{ padding: '22px' }}>
+        <div className="saas-card" style={{ padding: '22px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Truck size={18} color="var(--color-gold)" />
-              <h3 className="font-royal" style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700 }}>
-                Live GeoTracker Fleet
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: '#0f172a' }}>
+                Fleet Logistics
               </h3>
+              <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#64748b' }}>
+                Active palace transit vehicles.
+              </p>
             </div>
-            <span className="badge badge-gold" style={{ fontSize: '0.7rem' }}>
-              Jaipur Palace Transit
+            <span className="badge badge-primary">
+              Live GPS
             </span>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {fleet.map((v) => (
               <div 
                 key={v.id}
                 style={{
-                  background: 'rgba(22, 38, 82, 0.4)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '12px 16px',
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '10px',
+                  padding: '10px 14px',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center'
                 }}
               >
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
-                    <span style={{ fontWeight: 700, color: 'var(--color-gold)', fontSize: '0.85rem' }}>{v.vehicle_code}</span>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-dim)' }}>• Driver: {v.driver_name}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                    <span style={{ fontWeight: 700, color: '#4f46e5', fontSize: '0.82rem' }}>{v.vehicle_code}</span>
+                    <span style={{ fontSize: '0.72rem', color: '#64748b' }}>Driver: {v.driver_name}</span>
                   </div>
-                  <div style={{ fontSize: '0.82rem', fontWeight: 600 }}>{v.cargo_type}</div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>Dest: {v.destination}</div>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#0f172a' }}>{v.cargo_type}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Dest: {v.destination}</div>
                 </div>
 
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 800, color: v.eta_minutes === 0 ? '#34d399' : 'var(--color-gold-light)' }}>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 700, color: v.eta_minutes === 0 ? '#059669' : '#0f172a' }}>
                     {v.eta_minutes === 0 ? 'ARRIVED' : `${v.eta_minutes}m ETA`}
                   </div>
-                  <span className={`badge ${v.eta_minutes === 0 ? 'badge-emerald' : 'badge-sapphire'}`} style={{ fontSize: '0.65rem' }}>
+                  <span className={`badge ${v.eta_minutes === 0 ? 'badge-emerald' : 'badge-primary'}`} style={{ fontSize: '0.65rem' }}>
                     {v.status.replace('_', ' ')}
                   </span>
                 </div>
@@ -243,59 +270,52 @@ export default function OperationsView({ weddingId }) {
         </div>
       </div>
 
-      {/* Row 2: Minute-by-Minute Run Sheet */}
-      <div className="glass-panel" style={{ padding: '24px' }}>
+      {/* Minute-by-Minute Run Sheet */}
+      <div className="saas-card" style={{ padding: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Clock size={18} color="var(--color-gold)" />
-              <h3 className="font-royal" style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700 }}>
-                Live Minute-by-Minute Royal Run Sheet
-              </h3>
-            </div>
-            <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-              Real-time ceremonial progression with live status triggers for showrunners and banquet staff.
+            <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: '#0f172a' }}>
+              Minute-by-Minute Run Sheet
+            </h3>
+            <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+              Ceremonial progression with live status triggers for coordinators.
             </p>
           </div>
 
-          {/* Day Selector Pills */}
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              onClick={() => setSelectedDay(1)}
-              className={selectedDay === 1 ? 'btn-royal-gold' : 'btn-royal-outline'}
-              style={{ padding: '6px 14px', fontSize: '0.8rem' }}
-            >
-              Day 1: Mehendi & Sangeet
-            </button>
-            <button
-              onClick={() => setSelectedDay(2)}
-              className={selectedDay === 2 ? 'btn-royal-gold' : 'btn-royal-outline'}
-              style={{ padding: '6px 14px', fontSize: '0.8rem' }}
-            >
-              Day 2: Baraat & Royal Pheras
-            </button>
-            <button
-              onClick={() => setSelectedDay(3)}
-              className={selectedDay === 3 ? 'btn-royal-gold' : 'btn-royal-outline'}
-              style={{ padding: '6px 14px', fontSize: '0.8rem' }}
-            >
-              Day 3: Farewell Brunch
-            </button>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            {[1, 2, 3].map((day) => (
+              <button
+                key={day}
+                onClick={() => setSelectedDay(day)}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '6px',
+                  border: selectedDay === day ? '1px solid #4f46e5' : '1px solid #e2e8f0',
+                  background: selectedDay === day ? '#4f46e5' : '#ffffff',
+                  color: selectedDay === day ? '#ffffff' : '#64748b',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit'
+                }}
+              >
+                Day {day}: {day === 1 ? 'Mehendi & Sangeet' : day === 2 ? 'Baraat & Pheras' : 'Farewell Brunch'}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Run Sheet Table */}
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+          <table>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-muted)', fontSize: '0.75rem' }}>
-                <th style={{ padding: '12px 14px' }}>SCHEDULED</th>
-                <th style={{ padding: '12px 14px' }}>EVENT & CEREMONY</th>
-                <th style={{ padding: '12px 14px' }}>LOCATION</th>
-                <th style={{ padding: '12px 14px' }}>LEAD PERSON</th>
-                <th style={{ padding: '12px 14px' }}>CATEGORY</th>
-                <th style={{ padding: '12px 14px' }}>STATUS</th>
-                <th style={{ padding: '12px 14px', textAlign: 'right' }}>QUICK ACTIONS</th>
+              <tr>
+                <th>SCHEDULED</th>
+                <th>EVENT & CEREMONY</th>
+                <th>LOCATION</th>
+                <th>LEAD PERSON</th>
+                <th>CATEGORY</th>
+                <th>STATUS</th>
+                <th style={{ textAlign: 'right' }}>QUICK ACTIONS</th>
               </tr>
             </thead>
             <tbody>
@@ -306,57 +326,45 @@ export default function OperationsView({ weddingId }) {
                 return (
                   <tr 
                     key={item.id}
-                    style={{ 
-                      borderBottom: '1px solid rgba(255,255,255,0.05)',
-                      background: isLive ? 'rgba(212, 175, 55, 0.08)' : 'transparent'
-                    }}
+                    style={{ background: isLive ? '#eef2ff' : 'transparent' }}
                   >
-                    <td style={{ padding: '14px', fontFamily: 'monospace', fontWeight: 700, color: 'var(--color-gold)' }}>
+                    <td style={{ fontFamily: 'monospace', fontWeight: 700, color: '#4f46e5' }}>
                       {item.scheduled_time}
                     </td>
-                    <td style={{ padding: '14px', fontWeight: 700 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        {isLive && <span className="live-dot" />}
-                        <span>{item.event_name}</span>
-                      </div>
+                    <td style={{ fontWeight: 600, color: '#0f172a' }}>
+                      {item.event_name}
                       {item.notes && (
-                        <div style={{ fontSize: '0.72rem', color: 'var(--color-text-dim)', fontWeight: 400, marginTop: '2px' }}>
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 400 }}>
                           {item.notes}
                         </div>
                       )}
                     </td>
-                    <td style={{ padding: '14px', color: 'var(--color-text-muted)' }}>
-                      {item.location}
-                    </td>
-                    <td style={{ padding: '14px', color: 'var(--color-gold-light)', fontWeight: 600 }}>
-                      {item.lead_person}
-                    </td>
-                    <td style={{ padding: '14px', fontSize: '0.78rem', color: 'var(--color-text-dim)' }}>
-                      {item.vendor_category}
-                    </td>
-                    <td style={{ padding: '14px' }}>
-                      <span className={`badge ${isDone ? 'badge-emerald' : isLive ? 'badge-gold pulse-glow' : 'badge-sapphire'}`} style={{ fontSize: '0.68rem' }}>
+                    <td style={{ color: '#64748b' }}>{item.location}</td>
+                    <td style={{ fontWeight: 500, color: '#0f172a' }}>{item.lead_person}</td>
+                    <td style={{ fontSize: '0.78rem', color: '#64748b' }}>{item.vendor_category}</td>
+                    <td>
+                      <span className={`badge ${isDone ? 'badge-emerald' : isLive ? 'badge-primary' : 'badge-amber'}`}>
                         {item.status.toUpperCase()}
                       </span>
                     </td>
-                    <td style={{ padding: '14px', textAlign: 'right' }}>
+                    <td style={{ textAlign: 'right' }}>
                       <div style={{ display: 'inline-flex', gap: '6px' }}>
                         {!isLive && !isDone && (
                           <button
                             onClick={() => handleUpdateRunSheet(item.id, 'live')}
-                            className="btn-royal-outline"
-                            style={{ padding: '4px 10px', fontSize: '0.72rem', color: 'var(--color-gold-light)' }}
+                            className="btn-outline"
+                            style={{ padding: '4px 10px', fontSize: '0.72rem' }}
                           >
-                            <Play size={11} /> Start Live
+                            Start Live
                           </button>
                         )}
                         {!isDone && (
                           <button
                             onClick={() => handleUpdateRunSheet(item.id, 'completed')}
-                            className="btn-royal-outline"
-                            style={{ padding: '4px 10px', fontSize: '0.72rem', color: '#34d399', borderColor: 'rgba(16, 185, 129, 0.4)' }}
+                            className="btn-primary"
+                            style={{ padding: '4px 10px', fontSize: '0.72rem' }}
                           >
-                            <CheckCircle2 size={11} /> Mark Done
+                            Mark Done
                           </button>
                         )}
                       </div>
@@ -369,116 +377,90 @@ export default function OperationsView({ weddingId }) {
         </div>
       </div>
 
-      {/* Row 3: 26-Node Dynamic Task Graph & Delay Simulator */}
-      <div className="glass-panel" style={{ padding: '24px' }}>
+      {/* 26-Task Dependency Table */}
+      <div className="saas-card" style={{ padding: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Activity size={18} color="var(--color-gold)" />
-              <h3 className="font-royal" style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700 }}>
-                26-Node Dynamic Task Dependency Graph (DAG)
-              </h3>
-            </div>
-            <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-              Interactive Ripple-Effect Simulator: Click "Simulate +2h Delay" to watch downstream dependencies adjust automatically.
+            <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: '#0f172a' }}>
+              26 Critical Tasks DAG
+            </h3>
+            <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+              Task execution sequence with automated ripple delay calculations.
             </p>
           </div>
 
-          {/* Stage Filter */}
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {['ALL', 'pre_wedding', 'day_1', 'day_2', 'day_3'].map(stage => (
+          <div style={{ display: 'flex', gap: '6px' }}>
+            {['ALL', 'Setup', 'Catering', 'Ceremony'].map((stage) => (
               <button
                 key={stage}
                 onClick={() => setActiveStage(stage)}
-                className={activeStage === stage ? 'btn-royal-gold' : 'btn-royal-outline'}
-                style={{ padding: '5px 12px', fontSize: '0.75rem', textTransform: 'uppercase' }}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  border: activeStage === stage ? '1px solid #4f46e5' : '1px solid #e2e8f0',
+                  background: activeStage === stage ? '#4f46e5' : '#ffffff',
+                  color: activeStage === stage ? '#ffffff' : '#64748b',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit'
+                }}
               >
-                {stage.replace('_', ' ')}
+                {stage}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Tasks Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: '14px' }}>
-          {filteredTasks.map((t) => {
-            const isCritical = t.is_critical_path;
-            const isDelayed = t.delay_hours > 0;
-            const isCompleted = t.status === 'completed';
-
-            return (
-              <div
-                key={t.id}
-                style={{
-                  background: isDelayed 
-                    ? 'rgba(239, 68, 68, 0.08)' 
-                    : isCompleted 
-                      ? 'rgba(16, 185, 129, 0.06)' 
-                      : 'rgba(22, 38, 82, 0.4)',
-                  border: isDelayed 
-                    ? '1px solid rgba(239, 68, 68, 0.45)' 
-                    : isCritical 
-                      ? '1px solid var(--color-gold)' 
-                      : '1px solid var(--color-border)',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '16px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between'
-                }}
-              >
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ fontWeight: 800, color: 'var(--color-gold)', fontSize: '0.8rem' }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table>
+            <thead>
+              <tr>
+                <th>CODE</th>
+                <th>TASK NAME</th>
+                <th>STAGE</th>
+                <th>DURATION</th>
+                <th>DELAY</th>
+                <th>STATUS</th>
+                <th style={{ textAlign: 'right' }}>SIMULATE DELAY</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredTasks.map((t) => {
+                const isDelayed = t.delay_hours > 0;
+                return (
+                  <tr key={t.id}>
+                    <td style={{ fontWeight: 700, color: '#4f46e5', fontFamily: 'monospace' }}>
                       {t.task_code}
-                    </span>
-                    <div style={{ display: 'flex', gap: '4px' }}>
-                      {isCritical && (
-                        <span className="badge badge-gold" style={{ fontSize: '0.6rem', padding: '2px 6px' }}>
-                          CRITICAL PATH
-                        </span>
-                      )}
-                      <span className={`badge ${isCompleted ? 'badge-emerald' : isDelayed ? 'badge-ruby' : 'badge-sapphire'}`} style={{ fontSize: '0.6rem', padding: '2px 6px' }}>
-                        {t.status}
+                    </td>
+                    <td style={{ fontWeight: 600, color: '#0f172a' }}>
+                      {t.name}
+                    </td>
+                    <td style={{ color: '#64748b' }}>{t.stage}</td>
+                    <td style={{ fontFamily: 'monospace' }}>{t.duration_hours}h</td>
+                    <td style={{ fontFamily: 'monospace', color: isDelayed ? '#dc2626' : '#64748b', fontWeight: isDelayed ? 700 : 400 }}>
+                      {isDelayed ? `+${t.delay_hours}h` : '0h'}
+                    </td>
+                    <td>
+                      <span className={`badge ${t.status === 'completed' ? 'badge-emerald' : isDelayed ? 'badge-ruby' : 'badge-primary'}`}>
+                        {t.status.toUpperCase()}
                       </span>
-                    </div>
-                  </div>
-
-                  <div style={{ fontSize: '0.88rem', fontWeight: 700, marginBottom: '8px', lineHeight: 1.3 }}>
-                    {t.title}
-                  </div>
-
-                  <div style={{ fontSize: '0.72rem', color: 'var(--color-text-dim)', marginBottom: '8px' }}>
-                    Duration: {t.duration_hours}h • Stage: {t.stage.replace('_', ' ')}
-                  </div>
-
-                  {t.dependencies && (
-                    <div style={{ fontSize: '0.7rem', color: 'var(--color-gold-light)', background: 'rgba(0,0,0,0.3)', padding: '4px 8px', borderRadius: '4px', marginBottom: '8px' }}>
-                      Depends on: <strong>{t.dependencies}</strong>
-                    </div>
-                  )}
-
-                  {isDelayed && (
-                    <div style={{ fontSize: '0.75rem', color: '#f87171', fontWeight: 700, marginBottom: '8px' }}>
-                      ⚠️ Ripple Delay: +{t.delay_hours} Hours
-                    </div>
-                  )}
-                </div>
-
-                {/* Simulate Ripple Delay Button */}
-                <div style={{ paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                  <button
-                    onClick={() => handleSimulateDelay(t.id)}
-                    disabled={simulatingTaskId === t.id}
-                    className="btn-royal-outline"
-                    style={{ width: '100%', justifyContent: 'center', fontSize: '0.72rem', padding: '5px' }}
-                  >
-                    {simulatingTaskId === t.id ? 'Simulating Ripple...' : '⚡ Simulate +2h Delay'}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <button
+                        onClick={() => handleSimulateDelay(t.id)}
+                        disabled={simulatingTaskId === t.id}
+                        className="btn-outline"
+                        style={{ padding: '4px 10px', fontSize: '0.72rem' }}
+                      >
+                        {simulatingTaskId === t.id ? 'Simulating...' : '+2h Delay'}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -487,73 +469,59 @@ export default function OperationsView({ weddingId }) {
         <div style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.75)',
+          background: 'rgba(15, 23, 42, 0.6)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 100,
-          backdropFilter: 'blur(8px)'
+          zIndex: 1000
         }}>
-          <div className="glass-panel" style={{ width: '500px', padding: '28px' }}>
-            <h3 className="font-royal" style={{ margin: '0 0 16px', fontSize: '1.3rem' }}>
-              Report Emergency Operational Incident
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            width: '460px',
+            padding: '24px',
+            boxShadow: 'var(--shadow-elevated)'
+          }}>
+            <h3 style={{ margin: '0 0 16px', fontSize: '1.2rem', fontWeight: 700, color: '#0f172a' }}>
+              Report Incident Alert
             </h3>
-            <form onSubmit={handleCreateIncident} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <form onSubmit={handleCreateIncident} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
-                <label style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', display: 'block', marginBottom: '4px' }}>INCIDENT TITLE</label>
+                <label style={{ fontSize: '0.75rem', color: '#64748b', display: 'block', marginBottom: '4px' }}>Incident Title</label>
                 <input
+                  type="text"
                   required
-                  placeholder="e.g. Weather gust over South Lawn marquee"
                   value={incidentForm.title}
                   onChange={e => setIncidentForm({ ...incidentForm, title: e.target.value })}
-                  style={{ width: '100%', background: 'rgba(5,9,20,0.8)', border: '1px solid var(--color-border)', borderRadius: '6px', padding: '8px 12px', color: '#fff', fontSize: '0.85rem' }}
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.82rem', fontFamily: 'inherit' }}
                 />
               </div>
 
               <div>
-                <label style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', display: 'block', marginBottom: '4px' }}>SEVERITY</label>
-                <select
-                  value={incidentForm.severity}
-                  onChange={e => setIncidentForm({ ...incidentForm, severity: e.target.value })}
-                  style={{ width: '100%', background: 'rgba(5,9,20,0.8)', border: '1px solid var(--color-border)', borderRadius: '6px', padding: '8px 12px', color: '#fff', fontSize: '0.85rem' }}
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                  <option value="critical">Critical</option>
-                </select>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', display: 'block', marginBottom: '4px' }}>LOCATION</label>
+                <label style={{ fontSize: '0.75rem', color: '#64748b', display: 'block', marginBottom: '4px' }}>Location</label>
                 <input
+                  type="text"
                   required
-                  placeholder="e.g. Rambagh Palace Fountain Garden"
                   value={incidentForm.location}
                   onChange={e => setIncidentForm({ ...incidentForm, location: e.target.value })}
-                  style={{ width: '100%', background: 'rgba(5,9,20,0.8)', border: '1px solid var(--color-border)', borderRadius: '6px', padding: '8px 12px', color: '#fff', fontSize: '0.85rem' }}
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.82rem', fontFamily: 'inherit' }}
                 />
               </div>
 
               <div>
-                <label style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', display: 'block', marginBottom: '4px' }}>ACTION TAKEN / MITIGATION</label>
+                <label style={{ fontSize: '0.75rem', color: '#64748b', display: 'block', marginBottom: '4px' }}>Action Taken</label>
                 <textarea
+                  rows={2}
                   required
-                  rows={3}
-                  placeholder="Immediate response team dispatched with standby blowers..."
                   value={incidentForm.action_taken}
                   onChange={e => setIncidentForm({ ...incidentForm, action_taken: e.target.value })}
-                  style={{ width: '100%', background: 'rgba(5,9,20,0.8)', border: '1px solid var(--color-border)', borderRadius: '6px', padding: '8px 12px', color: '#fff', fontSize: '0.85rem' }}
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.82rem', fontFamily: 'inherit' }}
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
-                <button type="button" onClick={() => setShowIncidentModal(false)} className="btn-royal-outline">
-                  Cancel
-                </button>
-                <button type="submit" className="btn-royal-gold">
-                  Dispatch & Record Incident
-                </button>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
+                <button type="button" onClick={() => setShowIncidentModal(false)} className="btn-outline">Cancel</button>
+                <button type="submit" className="btn-primary">Submit Alert</button>
               </div>
             </form>
           </div>
