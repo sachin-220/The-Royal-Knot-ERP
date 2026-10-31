@@ -14,3 +14,6 @@ access_incident_user,knotcore.wedding.incident.user,model_knotcore_wedding_incid
 access_run_sheet_manager,knotcore.wedding.run.sheet.manager,model_knotcore_wedding_run_sheet,custom_wedding_core.group_wedding_founder,1,1,1,1
 access_run_sheet_planner,knotcore.wedding.run.sheet.planner,model_knotcore_wedding_run_sheet,custom_wedding_core.group_wedding_planner,1,1,1,1
 access_run_sheet_user,knotcore.wedding.run.sheet.user,model_knotcore_wedding_run_sheet,base.group_user,1,0,0,0
+access_geotracker_manager,knotcore.venue.geotracker.manager,model_knotcore_venue_geotracker,custom_wedding_core.group_wedding_founder,1,1,1,1
+access_geotracker_planner,knotcore.venue.geotracker.planner,model_knotcore_venue_geotracker,custom_wedding_core.group_wedding_planner,1,1,1,1
+access_geotracker_user,knotcore.venue.geotracker.user,model_knotcore_venue_geotracker,base.group_user,1,0,0,0

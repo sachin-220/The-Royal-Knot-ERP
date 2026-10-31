@@ -35,4 +35,10 @@
               parent="menu_wedding_operations_root"
               action="action_wedding_incident"
               sequence="50"/>
+
+    <menuitem id="menu_wedding_venue_geotracker"
+              name="Live Geographic Fleet &amp; Venue Map"
+              parent="menu_wedding_operations_root"
+              action="action_venue_geotracker"
+              sequence="60"/>
 </odoo>

@@ -10,6 +10,7 @@
                     <button name="action_evaluate" string="Evaluate Proposal" type="object" invisible="state != 'draft'" class="oe_highlight"/>
                     <button name="action_select_winner" string="🏆 1-Click Winner Selection (Generate PO)" type="object" invisible="state in ('winner', 'cancelled')" class="oe_highlight" confirm="Approving this quote will create a Purchase Order and automatically decline competing proposals in this category. Proceed?"/>
                     <button name="action_extract_ocr" string="📄 Run Document OCR" type="object" class="btn-secondary"/>
+                    <button name="action_recommend_alternatives" string="💡 Recommend Top 3 Alternatives" type="object" class="btn-secondary"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,under_review,winner,declined"/>
                 </header>
                 <sheet>

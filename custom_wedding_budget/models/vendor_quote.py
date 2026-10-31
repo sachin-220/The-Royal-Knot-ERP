@@ -276,3 +276,29 @@ class CustomWeddingVendorQuote(models.Model):
             f"OCR Status: Verified & Matched to Contract Specs."
         )
         self.message_post(body=_("📄 OCR extraction executed successfully on uploaded document '%s'.") % (self.quote_filename or 'document'))
+
+    def action_recommend_alternatives(self):
+        """
+        Alternative Vendor Recommender:
+        Recommends Top 3 Pre-Vetted Alternative Suppliers in the same category
+        with matching quality and price point if this supplier is booked or declined.
+        """
+        self.ensure_one()
+        alternatives = self.env['custom.wedding.vendor.quote'].search([
+            ('category_id', '=', self.category_id.id),
+            ('vendor_id', '!=', self.vendor_id.id),
+            ('state', 'in', ['draft', 'under_review', 'winner'])
+        ], order='composite_index_wci desc, rating_quality desc', limit=3)
+
+        alt_lines = []
+        for alt in alternatives:
+            alt_lines.append(f"• <b>{alt.vendor_id.name}</b>: Quoted ₹{alt.quoted_amount:,.2f} | WCI: {alt.composite_index_wci:.1f} | Rating: {alt.rating_quality:.1f}⭐ | Punctuality: {alt.rating_punctuality:.0f}%")
+
+        if not alt_lines:
+            alt_lines.append("• <i>No alternate active quotes recorded in this category yet. Consider issuing an RFQ to pre-vetted palace partners.</i>")
+
+        self.wedding_id.message_post(
+            body=_("💡 <b>Top 3 Alternative Vendor Recommendations for %s:</b><br/>%s") %
+            (self.category_id.name, "<br/>".join(alt_lines))
+        )
+        return True

@@ -22,6 +22,7 @@
         'views/gate_checkin_views.xml',
         'views/incident_views.xml',
         'views/run_sheet_views.xml',
+        'views/venue_geotracker_views.xml',
         'views/operations_menus.xml',
     ],
     'demo': [],
