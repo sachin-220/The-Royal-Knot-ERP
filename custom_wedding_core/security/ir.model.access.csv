@@ -1,0 +1,9 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_custom_wedding_planner,custom.wedding.planner,model_custom_wedding,group_wedding_planner,1,1,1,0
+access_custom_wedding_procurement,custom.wedding.procurement,model_custom_wedding,group_wedding_procurement,1,1,1,0
+access_custom_wedding_finance,custom.wedding.finance,model_custom_wedding,group_wedding_finance,1,1,1,1
+access_custom_wedding_founder,custom.wedding.founder,model_custom_wedding,group_wedding_founder,1,1,1,1
+access_custom_wedding_package_planner,custom.wedding.package.planner,model_custom_wedding_package,group_wedding_planner,1,0,0,0
+access_custom_wedding_package_founder,custom.wedding.package.founder,model_custom_wedding_package,group_wedding_founder,1,1,1,1
+access_custom_wedding_location_planner,custom.wedding.location.planner,model_custom_wedding_location,group_wedding_planner,1,0,0,0
+access_custom_wedding_location_founder,custom.wedding.location.founder,model_custom_wedding_location,group_wedding_founder,1,1,1,1

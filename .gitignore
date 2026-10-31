@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# Environment Secrets
+.env
+*.key
+
+# Odoo
+*.log
+.odoo_filestore/
+
+# IDE
+.vscode/
+.idea/
+*.swp

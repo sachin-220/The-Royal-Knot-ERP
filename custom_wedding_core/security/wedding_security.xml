@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <!-- Module Security Category -->
+        <record id="module_category_wedding_management" model="ir.module.category">
+            <field name="name">KnotCore Wedding Management</field>
+            <field name="description">Role-Based Access Control for The Royal Knot Wedding Management Engine</field>
+            <field name="sequence">20</field>
+        </record>
+
+        <!-- Role 1: Wedding Planner -->
+        <record id="group_wedding_planner" model="res.groups">
+            <field name="name">Wedding Planner</field>
+            <field name="category_id" ref="module_category_wedding_management"/>
+            <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+            <field name="comment">Field planners managing wedding schedules, tasks, and on-ground execution.</field>
+        </record>
+
+        <!-- Role 2: Procurement Manager -->
+        <record id="group_wedding_procurement" model="res.groups">
+            <field name="name">Procurement Manager</field>
+            <field name="category_id" ref="module_category_wedding_management"/>
+            <field name="implied_ids" eval="[(4, ref('group_wedding_planner'))]"/>
+            <field name="comment">Procurement officers managing RFQs, quotation comparison, and vendor PO commitments.</field>
+        </record>
+
+        <!-- Role 3: Finance Manager -->
+        <record id="group_wedding_finance" model="res.groups">
+            <field name="name">Finance Manager</field>
+            <field name="category_id" ref="module_category_wedding_management"/>
+            <field name="implied_ids" eval="[(4, ref('group_wedding_planner'))]"/>
+            <field name="comment">Accountants managing client milestone invoices, vendor advances, and settlements.</field>
+        </record>
+
+        <!-- Role 4: Founder / Administrator -->
+        <record id="group_wedding_founder" model="res.groups">
+            <field name="name">Founder / Executive Administrator</field>
+            <field name="category_id" ref="module_category_wedding_management"/>
+            <field name="implied_ids" eval="[(4, ref('group_wedding_finance')), (4, ref('group_wedding_procurement'))]"/>
+            <field name="users" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+            <field name="comment">Complete administrative control, company-wide profitability visibility, and seasonal analytics.</field>
+        </record>
+    </data>
+
+    <!-- Record Rules for Granular Data Isolation -->
+    <data noupdate="1">
+        <!-- Planner Record Rule: Assigned Weddings Only -->
+        <record id="wedding_rule_planner_assigned" model="ir.rule">
+            <field name="name">Planner: Assigned Weddings Only</field>
+            <field name="model_id" ref="model_custom_wedding"/>
+            <field name="domain_force">['|', ('planner_id', '=', user.id), ('coordinator_ids', 'in', [user.id])]</field>
+            <field name="groups" eval="[(4, ref('group_wedding_planner'))]"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="0"/>
+        </record>
+
+        <!-- Founder / Finance Rule: All Weddings Across Agency -->
+        <record id="wedding_rule_founder_all" model="ir.rule">
+            <field name="name">Executive: All Agency Weddings</field>
+            <field name="model_id" ref="model_custom_wedding"/>
+            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="groups" eval="[(4, ref('group_wedding_founder')), (4, ref('group_wedding_finance'))]"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="1"/>
+        </record>
+    </data>
+</odoo>

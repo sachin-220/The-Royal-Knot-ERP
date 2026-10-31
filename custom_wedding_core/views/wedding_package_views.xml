@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_custom_wedding_package_form" model="ir.ui.view">
+        <field name="name">custom.wedding.package.form</field>
+        <field name="model">custom.wedding.package</field>
+        <field name="arch" type="xml">
+            <form string="Wedding Service Package">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" string="Package Name"/>
+                        <h1>
+                            <field name="name" placeholder="e.g. Full-Service Royal Wedding"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="package_type"/>
+                            <field name="sequence"/>
+                        </group>
+                        <group>
+                            <field name="base_task_count"/>
+                            <field name="is_active"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Service Inclusions &amp; Scope">
+                            <field name="description" placeholder="Specify all deliverables, day-of staff, and coordination scope..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_custom_wedding_package_tree" model="ir.ui.view">
+        <field name="name">custom.wedding.package.tree</field>
+        <field name="model">custom.wedding.package</field>
+        <field name="arch" type="xml">
+            <tree string="Service Packages">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="package_type" widget="badge"/>
+                <field name="base_task_count"/>
+                <field name="is_active" widget="boolean_toggle"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_custom_wedding_package" model="ir.actions.act_window">
+        <field name="name">Service Packages</field>
+        <field name="res_model">custom.wedding.package</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

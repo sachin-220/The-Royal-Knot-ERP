@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Sequence for Custom Wedding Reference Number -->
+        <record id="seq_custom_wedding" model="ir.sequence">
+            <field name="name">Wedding Reference Sequence</field>
+            <field name="code">custom.wedding</field>
+            <field name="prefix">TRK/%(year)s/</field>
+            <field name="padding">4</field>
+            <field name="company_id" eval="False"/>
+        </record>
+    </data>
+</odoo>

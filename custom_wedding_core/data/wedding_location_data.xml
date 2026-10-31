@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Jaipur Venues -->
+        <record id="location_rambagh_palace" model="custom.wedding.location">
+            <field name="name">Rambagh Palace</field>
+            <field name="destination">jaipur</field>
+            <field name="venue_type">palace</field>
+            <field name="max_guest_capacity">650</field>
+            <field name="contact_name">Bhawani Singh</field>
+            <field name="contact_phone">+91 141 2211919</field>
+            <field name="address">Bhawani Singh Road, Jaipur, Rajasthan 302005</field>
+            <field name="notes">&lt;p&gt;Heritage lawns require sound permit after 10 PM. Backup 125kVA generator compulsory for exterior facade illumination.&lt;/p&gt;</field>
+        </record>
+
+        <record id="location_samode_palace" model="custom.wedding.location">
+            <field name="name">Samode Palace</field>
+            <field name="destination">jaipur</field>
+            <field name="venue_type">heritage_fort</field>
+            <field name="max_guest_capacity">450</field>
+            <field name="contact_name">Rawal Sahab</field>
+            <field name="contact_phone">+91 1423 240014</field>
+            <field name="address">Village Samode, Tehsil Chomu, Jaipur, Rajasthan 303806</field>
+            <field name="notes">&lt;p&gt;Narrow ramparts access. Heavy logistics trucks must unload at lower courtyard before 09:00 AM.&lt;/p&gt;</field>
+        </record>
+
+        <!-- Udaipur Venues -->
+        <record id="location_city_palace_udaipur" model="custom.wedding.location">
+            <field name="name">City Palace Udaipur (Zenana Mahal / Manek Chowk)</field>
+            <field name="destination">udaipur</field>
+            <field name="venue_type">palace</field>
+            <field name="max_guest_capacity">800</field>
+            <field name="contact_name">Vikramaditya Mewar</field>
+            <field name="contact_phone">+91 294 2419021</field>
+            <field name="address">Old City, Udaipur, Rajasthan 313001</field>
+            <field name="notes">&lt;p&gt;Heritage marble preservation protocol. No open flame fireworks inside courtyard; cold pyrotechnics only.&lt;/p&gt;</field>
+        </record>
+
+        <record id="location_taj_lake_palace" model="custom.wedding.location">
+            <field name="name">Taj Lake Palace</field>
+            <field name="destination">udaipur</field>
+            <field name="venue_type">luxury_resort</field>
+            <field name="max_guest_capacity">400</field>
+            <field name="contact_name">Arjun Rathore</field>
+            <field name="contact_phone">+91 294 2428800</field>
+            <field name="address">Pichola Lake Island, Udaipur, Rajasthan 313001</field>
+            <field name="notes">&lt;p&gt;Island logistics via jetty boats only. Catering equipment and floristry must be ferried in shifts.&lt;/p&gt;</field>
+        </record>
+    </data>
+</odoo>

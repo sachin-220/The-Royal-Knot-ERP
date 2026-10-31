@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Root KnotCore Application Menu -->
+    <menuitem id="menu_wedding_root"
+              name="The Royal Knot"
+              web_icon="custom_wedding_core,static/description/icon.png"
+              sequence="10"/>
+
+    <!-- Operational Weddings Menus -->
+    <menuitem id="menu_wedding_operations"
+              name="Weddings"
+              parent="menu_wedding_root"
+              sequence="10"/>
+
+    <menuitem id="menu_wedding_all"
+              name="All Weddings"
+              parent="menu_wedding_operations"
+              action="action_custom_wedding"
+              sequence="10"/>
+
+    <!-- Master Configuration Menus -->
+    <menuitem id="menu_wedding_config"
+              name="Configuration"
+              parent="menu_wedding_root"
+              sequence="90"
+              groups="group_wedding_founder"/>
+
+    <menuitem id="menu_wedding_packages"
+              name="Service Packages"
+              parent="menu_wedding_config"
+              action="action_custom_wedding_package"
+              sequence="10"/>
+
+    <menuitem id="menu_wedding_locations"
+              name="Venues &amp; Locations"
+              parent="menu_wedding_config"
+              action="action_custom_wedding_location"
+              sequence="20"/>
+</odoo>
