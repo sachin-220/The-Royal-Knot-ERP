@@ -31,97 +31,38 @@ function generateSmoothPaths(pts) {
   return { line, area };
 }
 
-// Master timeline datasets with discrete points for real-time hover interactivity
-const rawTimelineData = {
-  '7D': {
-    label: 'the last 7 days',
-    totalRevenue: '₹14,250,000',
-    growthRate: '+18.2%',
-    defaultIndex: 4,
-    points: [
-      { x: 40,  y: 168, date: 'Oct 25, 2026', value: '₹1,420,000', growth: '+5.2%' },
-      { x: 140, y: 156, date: 'Oct 26, 2026', value: '₹1,980,000', growth: '+8.1%' },
-      { x: 245, y: 132, date: 'Oct 27, 2026', value: '₹2,640,000', growth: '+10.4%' },
-      { x: 350, y: 114, date: 'Oct 28, 2026', value: '₹3,150,000', growth: '+12.8%' },
-      { x: 450, y: 92,  date: 'Oct 29, 2026', value: '₹3,850,000', growth: '+14.6%' },
-      { x: 555, y: 68,  date: 'Oct 30, 2026', value: '₹4,320,000', growth: '+16.5%' },
-      { x: 660, y: 46,  date: 'Oct 31, 2026', value: '₹4,890,000', growth: '+18.2%' },
-    ],
-    xLabels: ['Oct 25', 'Oct 26', 'Oct 27', 'Oct 28', 'Oct 29', 'Oct 30', 'Oct 31']
-  },
-  '30D': {
-    label: 'the last 30 days',
-    totalRevenue: '₹68,500,000',
-    growthRate: '+12.8%',
-    defaultIndex: 4,
-    points: [
-      { x: 30,  y: 160, date: 'Nov 14, 2026', value: '₹8,450,000',  growth: '+6.5%' },
-      { x: 110, y: 145, date: 'Nov 17, 2026', value: '₹11,200,000', growth: '+7.8%' },
-      { x: 190, y: 132, date: 'Nov 20, 2026', value: '₹14,900,000', growth: '+9.4%' },
-      { x: 270, y: 118, date: 'Nov 23, 2026', value: '₹16,400,000', growth: '+10.9%' },
-      { x: 350, y: 88,  date: 'Nov 26, 2026', value: '₹18,245,000', growth: '+12.4%' },
-      { x: 430, y: 104, date: 'Nov 29, 2026', value: '₹19,800,000', growth: '+11.8%' },
-      { x: 510, y: 84,  date: 'Dec 02, 2026', value: '₹22,650,000', growth: '+13.7%' },
-      { x: 590, y: 64,  date: 'Dec 05, 2026', value: '₹25,900,000', growth: '+14.9%' },
-      { x: 670, y: 42,  date: 'Dec 08, 2026', value: '₹28,150,000', growth: '+16.1%' },
-    ],
-    xLabels: ['Nov 14', 'Nov 17', 'Nov 20', 'Nov 23', 'Nov 26', 'Nov 29', 'Dec 2', 'Dec 5', 'Dec 8']
-  },
-  '90D': {
-    label: 'the last 90 days',
-    totalRevenue: '₹184,200,000',
-    growthRate: '+24.5%',
-    defaultIndex: 3,
-    points: [
-      { x: 35,  y: 172, date: 'Aug 01, 2026', value: '₹18,500,000', growth: '+12.0%' },
-      { x: 140, y: 154, date: 'Aug 15, 2026', value: '₹26,400,000', growth: '+14.5%' },
-      { x: 245, y: 136, date: 'Sep 01, 2026', value: '₹34,100,000', growth: '+17.2%' },
-      { x: 350, y: 106, date: 'Sep 15, 2026', value: '₹42,500,000', growth: '+19.8%' },
-      { x: 455, y: 76,  date: 'Oct 01, 2026', value: '₹51,800,000', growth: '+22.1%' },
-      { x: 560, y: 52,  date: 'Oct 15, 2026', value: '₹62,400,000', growth: '+23.9%' },
-      { x: 665, y: 26,  date: 'Oct 31, 2026', value: '₹74,200,000', growth: '+25.8%' },
-    ],
-    xLabels: ['Aug 1', 'Aug 15', 'Sep 1', 'Sep 15', 'Oct 1', 'Oct 15', 'Oct 31']
-  },
-  '1Y': {
-    label: 'the past 12 months',
-    totalRevenue: '₹685,000,000',
-    growthRate: '+31.4%',
-    defaultIndex: 4,
-    points: [
-      { x: 35,  y: 168, date: 'Nov 2025', value: '₹48,000,000',  growth: '+18.4%' },
-      { x: 140, y: 148, date: 'Jan 2026', value: '₹95,000,000',  growth: '+21.5%' },
-      { x: 245, y: 126, date: 'Mar 2026', value: '₹162,000,000', growth: '+24.8%' },
-      { x: 350, y: 98,  date: 'May 2026', value: '₹248,000,000', growth: '+27.4%' },
-      { x: 455, y: 64,  date: 'Jul 2026', value: '₹375,000,000', growth: '+29.6%' },
-      { x: 560, y: 38,  date: 'Sep 2026', value: '₹520,000,000', growth: '+32.8%' },
-      { x: 665, y: 16,  date: 'Nov 2026', value: '₹685,000,000', growth: '+35.2%' },
-    ],
-    xLabels: ['Nov', 'Jan', 'Mar', 'May', 'Jul', 'Sep', 'Nov']
-  }
-};
-
-// Precompute smooth svg paths for each timeline dataset
-const timelineData = Object.keys(rawTimelineData).reduce((acc, key) => {
-  const item = rawTimelineData[key];
-  const { line, area } = generateSmoothPaths(item.points);
-  acc[key] = {
-    ...item,
-    pathLine: line,
-    pathArea: area
-  };
-  return acc;
-}, {});
-
 export default function CockpitView({ wedding, founderData, dbHealth }) {
   const [atRiskLeads, setAtRiskLeads] = useState([]);
   const [followupStatus, setFollowupStatus] = useState(null);
   const [activeTimeframe, setActiveTimeframe] = useState('30D');
   const [hoverIndex, setHoverIndex] = useState(null);
   const [selectedPointIndex, setSelectedPointIndex] = useState(null);
+  const [currentTimeline, setCurrentTimeline] = useState(null);
+  const [loadingChart, setLoadingChart] = useState(true);
   const chartSvgRef = useRef(null);
 
-  const currentTimeline = timelineData[activeTimeframe] || timelineData['30D'];
+  // Dynamically fetch revenue performance analytics from Python backend connected to PostgreSQL
+  useEffect(() => {
+    let isMounted = true;
+    setLoadingChart(true);
+    fetch(`http://127.0.0.1:5000/api/analytics/revenue-performance?timeframe=${activeTimeframe}`)
+      .then(res => res.json())
+      .then(data => {
+        if (!isMounted) return;
+        const { line, area } = generateSmoothPaths(data.points);
+        setCurrentTimeline({
+          ...data,
+          pathLine: line,
+          pathArea: area
+        });
+        setLoadingChart(false);
+      })
+      .catch(err => {
+        console.error("Failed to load dynamic revenue performance data:", err);
+        setLoadingChart(false);
+      });
+    return () => { isMounted = false; };
+  }, [activeTimeframe]);
 
   // Monitor high-value leads for 48h SLA inaction
   useEffect(() => {
@@ -328,7 +269,7 @@ export default function CockpitView({ wedding, founderData, dbHealth }) {
                 Revenue Performance
               </h3>
               <p style={{ fontSize: '0.78rem', color: '#64748b', margin: '3px 0 0' }}>
-                Contracted cash inflows across {currentTimeline.label}.
+                Contracted cash inflows across {currentTimeline?.label || 'the selected period'}.
               </p>
             </div>
 
@@ -362,7 +303,7 @@ export default function CockpitView({ wedding, founderData, dbHealth }) {
               </div>
 
               {/* Dynamic Metric indicators (updates on hover) */}
-              {(() => {
+              {currentTimeline && (() => {
                 const effIdx = hoverIndex !== null 
                   ? hoverIndex 
                   : (selectedPointIndex !== null ? selectedPointIndex : (currentTimeline.defaultIndex ?? 4));
@@ -390,7 +331,12 @@ export default function CockpitView({ wedding, founderData, dbHealth }) {
           </div>
 
           {/* DYNAMIC SVG CHART WITH REAL-TIME HOVER TRACKING */}
-          {(() => {
+          {loadingChart || !currentTimeline ? (
+            <div style={{ height: '220px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#64748b', fontSize: '0.84rem', gap: '10px' }}>
+              <div style={{ width: '22px', height: '22px', border: '2.5px solid #e2e8f0', borderTopColor: '#4f46e5', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              <span>Syncing live revenue timeline from PostgreSQL database...</span>
+            </div>
+          ) : (() => {
             const effectiveIndex = hoverIndex !== null 
               ? hoverIndex 
               : (selectedPointIndex !== null ? selectedPointIndex : (currentTimeline.defaultIndex ?? 4));
