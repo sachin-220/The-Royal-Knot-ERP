@@ -4,9 +4,6 @@ import TopHeader from './components/TopHeader';
 import CockpitView from './components/CockpitView';
 import EnquiriesView from './components/EnquiriesView';
 import BudgetVendorView from './components/BudgetVendorView';
-import OperationsView from './components/OperationsView';
-import GateFinanceView from './components/GateFinanceView';
-import ConciergeModal from './components/ConciergeModal';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function App() {
@@ -15,7 +12,6 @@ export default function App() {
   const [selectedWedding, setSelectedWedding] = useState(null);
   const [founderData, setFounderData] = useState(null);
   const [dbHealth, setDbHealth] = useState(null);
-  const [isConciergeOpen, setIsConciergeOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -140,18 +136,6 @@ export default function App() {
                   weddingId={selectedWedding?.id || 1} 
                 />
               )}
-
-              {activeTab === 'operations' && (
-                <OperationsView 
-                  weddingId={selectedWedding?.id || 1} 
-                />
-              )}
-
-              {activeTab === 'gate_finance' && (
-                <GateFinanceView 
-                  weddingId={selectedWedding?.id || 1} 
-                />
-              )}
             </>
           )}
         </main>
@@ -178,13 +162,6 @@ export default function App() {
         </footer>
 
       </div>
-
-      {/* Floating Concierge Modal if needed */}
-      <ConciergeModal
-        isOpen={isConciergeOpen}
-        onClose={() => setIsConciergeOpen(false)}
-        wedding={selectedWedding}
-      />
 
     </div>
   );

@@ -9,24 +9,16 @@ export default function TopHeader({
 }) {
   const titles = {
     cockpit: {
-      title: 'Dashboard Overview',
-      subtitle: 'Track wedding performance, manage vendors and monitor lead conversion.'
+      title: 'Founder Dashboard Overview',
+      subtitle: 'Lead recovery intelligence, revenue performance, and vendor procurement overview.'
     },
     enquiries: {
-      title: 'Enquiries & Lead Intelligence',
-      subtitle: 'Lead intake, ML conversion scoring, and 48-hour recovery intelligence.'
+      title: 'User Enquiries & Lead Intelligence',
+      subtitle: 'Telegram intake, ML conversion prediction (0-100%), and 48-hour recovery intelligence.'
     },
     budget: {
-      title: 'Budget Allocation & Vendor Matrix',
-      subtitle: 'Side-by-side vendor quotation comparison, WCI scoring, and anomaly audit.'
-    },
-    operations: {
-      title: 'Operations & Task DAG',
-      subtitle: '26 critical-path tasks, dependency run sheet, and vendor geotracking.'
-    },
-    gate_finance: {
-      title: 'Gate Pass & Security Check-In',
-      subtitle: 'Digital guest passes, QR check-in, and milestone billing audit.'
+      title: 'Vendor Quotations & Comparison Grid',
+      subtitle: 'OCR quotation confirmation, fill-in-the-blanks engine, and side-by-side comparison.'
     }
   };
 

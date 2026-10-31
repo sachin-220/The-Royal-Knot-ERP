@@ -7,10 +7,8 @@ import {
 export default function Sidebar({ activeTab, setActiveTab, dbHealth }) {
   const navItems = [
     { id: 'cockpit', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'enquiries', label: 'Enquiries & Leads', icon: Users },
-    { id: 'budget', label: 'Budget & Vendors', icon: FileSpreadsheet },
-    { id: 'operations', label: 'Operations & Tasks', icon: CheckSquare },
-    { id: 'gate_finance', label: 'Gate & Security', icon: ShieldCheck },
+    { id: 'enquiries', label: 'User Enquiries & Leads', icon: Users },
+    { id: 'budget', label: 'Vendor Quotations & Comparison', icon: FileSpreadsheet },
   ];
 
   return (

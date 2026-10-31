@@ -231,23 +231,6 @@ export default function BudgetVendorView({ weddingId }) {
         >
           OCR & Fill-in-the-Blanks Simulator
         </button>
-
-        <button
-          onClick={() => setActiveSubTab('matrix')}
-          style={{
-            padding: '8px 16px',
-            borderRadius: '8px',
-            border: activeSubTab === 'matrix' ? '1px solid #4f46e5' : '1px solid #e2e8f0',
-            background: activeSubTab === 'matrix' ? '#4f46e5' : '#ffffff',
-            color: activeSubTab === 'matrix' ? '#ffffff' : '#64748b',
-            fontSize: '0.82rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            fontFamily: 'inherit'
-          }}
-        >
-          18-Category Allocation Matrix
-        </button>
       </div>
 
       {/* SUB-TAB 1: MULTI-VENDOR QUOTATION COMPARISON TABLE */}
@@ -560,84 +543,6 @@ export default function BudgetVendorView({ weddingId }) {
               )}
             </div>
           )}
-        </div>
-      )}
-
-      {/* SUB-TAB 3: 18-CATEGORY ALLOCATION TABLE */}
-      {activeSubTab === 'matrix' && (
-        <div className="saas-card" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <div>
-              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: '#0f172a' }}>
-                18-Category Allocation Matrix
-              </h3>
-              <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#64748b' }}>
-                Strict 100.00% Sum Guard against total contracted budget.
-              </p>
-            </div>
-
-            <div style={{ position: 'relative', width: '240px' }}>
-              <Search size={14} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-              <input
-                type="text"
-                placeholder="Search category..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{
-                  width: '100%',
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '6px',
-                  padding: '6px 12px 6px 32px',
-                  fontSize: '0.8rem',
-                  outline: 'none',
-                  fontFamily: 'inherit'
-                }}
-              />
-            </div>
-          </div>
-
-          <div style={{ overflowX: 'auto' }}>
-            <table>
-              <thead>
-                <tr>
-                  <th>CODE</th>
-                  <th>CATEGORY NAME</th>
-                  <th>WEIGHT</th>
-                  <th>ALLOCATED</th>
-                  <th>COMMITTED</th>
-                  <th>VARIANCE</th>
-                  <th>STATUS</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredCategories.map((c) => {
-                  const allocL = (c.allocated_amount / 100000).toFixed(2);
-                  const commL = (c.committed_amount / 100000).toFixed(2);
-                  const varL = (c.variance / 100000).toFixed(2);
-                  const isOver = c.variance > 0;
-
-                  return (
-                    <tr key={c.category_code}>
-                      <td style={{ fontWeight: 700, color: '#4f46e5' }}>{c.category_code}</td>
-                      <td style={{ fontWeight: 500, color: '#0f172a' }}>{c.category_name}</td>
-                      <td style={{ fontWeight: 600 }}>{c.percentage}%</td>
-                      <td style={{ fontFamily: 'monospace' }}>₹{allocL} L</td>
-                      <td style={{ fontFamily: 'monospace' }}>₹{commL} L</td>
-                      <td style={{ fontFamily: 'monospace', color: isOver ? '#dc2626' : '#10b981' }}>
-                        {isOver ? `+₹${varL} L` : `-₹${Math.abs(varL)} L`}
-                      </td>
-                      <td>
-                        <span className={`badge ${c.status === 'on_track' ? 'badge-emerald' : 'badge-amber'}`}>
-                          {c.status.replace('_', ' ')}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
         </div>
       )}
 
