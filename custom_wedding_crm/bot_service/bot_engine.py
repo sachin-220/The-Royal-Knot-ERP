@@ -598,7 +598,44 @@ class KnotCoreBotEngine:
         if text.strip() == "4821":
             self.send_message(chat_id, "✅ <b>Palace Gate Check-In Verified!</b> Dock 3 unloading cleared.")
             return
-        self.send_message(chat_id, "🚚 <b>Vendor Portal:</b> Reply with <code>/bid &lt;category&gt; &lt;vendor&gt; &lt;amount&gt;</code> or OTP <code>4821</code>.")
+
+        # Vendor Quotation Verification & OCR Engine
+        try:
+            from knotcore_backend.quotation_ocr_engine import QuotationOCREngine
+            pending = session.get("pending_fill_blank")
+            result = QuotationOCREngine.process_vendor_submission(
+                text_content=text,
+                vendor_sender_name=session.get("vendor_name") or session.get("name", "Supplier"),
+                chat_id=chat_id,
+                pending_session=pending
+            )
+
+            # 1. If not a quotation, notify vendor
+            if not result.get("is_quotation"):
+                self.send_message(chat_id, result["message"])
+                return
+
+            # 2. If missing fields (e.g. quantity), prompt fill in the blanks
+            if result.get("needs_fill_blank"):
+                session["pending_fill_blank"] = {
+                    "is_waiting_for_missing": True,
+                    "missing_fields": result["missing_fields"],
+                    "extracted_so_far": result["extracted_so_far"]
+                }
+                self.send_message(chat_id, result["message"])
+                return
+
+            # 3. Completed quotation placed into comparison grid
+            session["pending_fill_blank"] = None
+            self.send_message(chat_id, result["message"])
+            return
+        except Exception as e:
+            print(f"[Vendor Quote OCR Error] {e}")
+
+        self.send_message(
+            chat_id,
+            "🚚 <b>Vendor Portal:</b> Please submit your itemized quotation (e.g. category, quantity of plates/units, price) or reply with OTP <code>4821</code>."
+        )
 
     def _handle_client_message(self, chat_id: int, text: str, session: Dict[str, Any]):
         if "/sign" in text.lower() or "sign" in text.lower():

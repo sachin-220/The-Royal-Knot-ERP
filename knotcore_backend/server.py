@@ -5,6 +5,12 @@ Connecting directly to PostgreSQL (knotcore_db) on localhost:5432
 """
 import os
 import sys
+
+# Ensure workspace root is in sys.path
+WORKSPACE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if WORKSPACE_DIR not in sys.path:
+    sys.path.insert(0, WORKSPACE_DIR)
+
 import json
 import secrets
 import datetime
@@ -23,8 +29,10 @@ app = Flask(__name__)
 # Restrict CORS to trusted local origins
 CORS(app, origins=["http://localhost:5173", "http://127.0.0.1:5173"])
 
-# Custom JSON encoder for Decimal and Date types
-class CustomJSONEncoder(json.JSONEncoder):
+from flask.json.provider import DefaultJSONProvider
+
+# Custom JSON provider for Decimal and Date types in Flask 3.x
+class CustomJSONProvider(DefaultJSONProvider):
     def default(self, obj):
         if isinstance(obj, Decimal):
             return float(obj)
@@ -32,7 +40,8 @@ class CustomJSONEncoder(json.JSONEncoder):
             return obj.isoformat()
         return super().default(obj)
 
-app.json_encoder = CustomJSONEncoder
+app.json_provider_class = CustomJSONProvider
+app.json = CustomJSONProvider(app)
 
 # Database connection pool helper
 def get_db_connection():
@@ -721,6 +730,121 @@ def broadcast_rfp_to_vendors(inquiry_id):
         "message": f"Proposal #{inquiry_id} released to One-Way Mirror Vendor Procurement Network!",
         "inquiry": updated,
         "protocol": "One-Way Mirror (Blind Bidding: competing vendors cannot view quotes)"
+    })
+
+# ----------------- 8. VENDOR OCR & FILL-IN-THE-BLANKS -----------------
+@app.route("/api/vendor/quotation-ocr", methods=["POST"])
+def vendor_quotation_ocr():
+    """
+    Vendor quotation ingestion via OCR:
+    1. Confirms whether it is a quotation or not
+    2. Identifies missing fields (especially quantity)
+    3. Prompts fill-in-the-blanks if needed
+    4. Evaluates WCI score and +2σ anomaly
+    5. Ingests into comparison grid
+    """
+    data = request.json or {}
+    text_content = data.get("text", "")
+    vendor_name = data.get("vendor_name", "Supplier")
+    pending_session = data.get("pending_session")
+
+    from knotcore_backend.quotation_ocr_engine import QuotationOCREngine
+    result = QuotationOCREngine.process_vendor_submission(
+        text_content=text_content,
+        vendor_sender_name=vendor_name,
+        pending_session=pending_session
+    )
+    return jsonify(result)
+
+# ----------------- 9. LEAD CONVERSION & RECOVERY INTELLIGENCE -----------------
+@app.route("/api/leads/conversion-overview", methods=["GET"])
+def get_leads_conversion_overview():
+    """Fetch all leads with ML conversion prediction scores & recovery risk status"""
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("""
+        SELECT id, name, phone, telegram_id, preferred_city, guest_count,
+               budget_inr, sentiment_score, recovery_status, status,
+               duration_days, conversion_score, conversion_tier,
+               hours_since_last_response, risk_status, assigned_planner,
+               backup_planner, follow_up_draft, created_at
+        FROM crm_inquiries
+        ORDER BY created_at DESC
+    """)
+    inquiries = cur.fetchall()
+    
+    # Calculate conversion prediction for any without score
+    from knotcore_backend.lead_intelligence import LeadIntelligenceEngine
+    enriched = []
+    for inq in inquiries:
+        if not inq["conversion_score"] or inq["conversion_score"] == 0:
+            scoring = LeadIntelligenceEngine.calculate_conversion_prediction(inq)
+            inq["conversion_score"] = scoring["conversion_score"]
+            inq["conversion_tier"] = scoring["conversion_tier"]
+        if not inq["follow_up_draft"]:
+            inq["follow_up_draft"] = LeadIntelligenceEngine.generate_venue_customized_followup(inq)
+        enriched.append(inq)
+
+    cur.close()
+    conn.close()
+    return jsonify(enriched)
+
+@app.route("/api/leads/<int:inquiry_id>/simulate-recovery", methods=["POST"])
+def simulate_lead_recovery(inquiry_id):
+    """
+    Simulates elapsed time for lead response:
+    - 48h: Flags 'At Risk of Loss' on Founder Dashboard & generates venue-customized draft
+    - 72h: Auto-reassigns to backup planner
+    """
+    data = request.json or {}
+    hours_elapsed = int(data.get("hours", 48))
+
+    from knotcore_backend.lead_intelligence import LeadIntelligenceEngine
+    result = LeadIntelligenceEngine.audit_lead_recovery_status(inquiry_id, hours_elapsed)
+    return jsonify(result)
+
+@app.route("/api/leads/<int:inquiry_id>/send-followup", methods=["POST"])
+def send_customized_followup(inquiry_id):
+    """Dispatches the venue-customized follow-up message to the client in Telegram"""
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("SELECT * FROM crm_inquiries WHERE id = %s", (inquiry_id,))
+    inq = cur.fetchone()
+
+    if not inq:
+        cur.close()
+        conn.close()
+        return jsonify({"error": "Lead not found"}), 404
+
+    from knotcore_backend.lead_intelligence import LeadIntelligenceEngine
+    draft = inq.get("follow_up_draft") or LeadIntelligenceEngine.generate_venue_customized_followup(inq)
+
+    # Reset risk status to 'recovered'
+    cur.execute("""
+        UPDATE crm_inquiries
+        SET risk_status = 'recovered', hours_since_last_response = 0
+        WHERE id = %s
+        RETURNING *;
+    """, (inquiry_id,))
+    updated = cur.fetchone()
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    # If client has chat_id, send via Telegram
+    chat_id = inq.get("chat_id")
+    bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
+    if chat_id and bot_token:
+        try:
+            tg_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+            requests.post(tg_url, json={"chat_id": chat_id, "text": f"👑 <b>The Royal Knot Executive Concierge:</b>\n\n{draft}", "parse_mode": "HTML"}, timeout=5)
+        except Exception as e:
+            print(f"[Follow-up Send Error] {e}")
+
+    return jsonify({
+        "message": f"Venue-customized follow-up dispatched to {inq['name']}! Lead marked as 'Recovered'.",
+        "draft_sent": draft,
+        "lead": updated
     })
 
 if __name__ == "__main__":

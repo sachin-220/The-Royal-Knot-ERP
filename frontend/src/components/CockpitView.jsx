@@ -1,10 +1,48 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   TrendingUp, ShieldCheck, Users, DollarSign, Calendar, MapPin, 
-  Sparkles, CheckCircle2, AlertCircle, ArrowUpRight, BarChart3, Database
+  Sparkles, CheckCircle2, AlertCircle, ArrowUpRight, BarChart3, Database,
+  AlertTriangle, Send, ChevronRight
 } from 'lucide-react';
 
 export default function CockpitView({ wedding, founderData, dbHealth }) {
+  const [atRiskLeads, setAtRiskLeads] = useState([]);
+  const [followupStatus, setFollowupStatus] = useState(null);
+
+  // Monitor high-value leads for 48h SLA inaction
+  useEffect(() => {
+    const fetchLeadRisks = async () => {
+      try {
+        const res = await fetch('http://127.0.0.1:5000/api/leads/conversion-overview');
+        const data = await res.json();
+        const flagged = data.filter(i => i.risk_status === 'at_risk' || (i.hours_since_last_response >= 48 && i.risk_status !== 'recovered'));
+        setAtRiskLeads(flagged);
+      } catch (e) {
+        console.warn("Failed to check lead risks in CockpitView:", e);
+      }
+    };
+    fetchLeadRisks();
+    const interval = setInterval(fetchLeadRisks, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleSendFollowup = async (inquiryId) => {
+    try {
+      const res = await fetch(`http://127.0.0.1:5000/api/leads/${inquiryId}/send-followup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFollowupStatus(`✓ Venue follow-up dispatched to ${data.lead.name}! Lead recovered.`);
+        setAtRiskLeads(prev => prev.filter(i => i.id !== inquiryId));
+        setTimeout(() => setFollowupStatus(null), 5000);
+      }
+    } catch (err) {
+      console.error("Failed to send follow-up from cockpit:", err);
+    }
+  };
+
   if (!wedding) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading wedding profile...</div>;
 
   const macro = founderData?.macro_metrics || {
@@ -26,6 +64,76 @@ export default function CockpitView({ wedding, founderData, dbHealth }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
+      {/* 48H STANDOUT FEATURE: FOUNDER AT RISK OF LOSS ALERT BANNER */}
+      {atRiskLeads.length > 0 && (
+        <div style={{
+          padding: '20px 28px',
+          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.22) 0%, rgba(185, 28, 28, 0.12) 100%)',
+          border: '1px solid rgba(239, 68, 68, 0.5)',
+          borderRadius: 'var(--radius-md)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          boxShadow: '0 8px 30px rgba(239, 68, 68, 0.2)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{
+              width: '46px',
+              height: '46px',
+              borderRadius: '12px',
+              background: 'rgba(239, 68, 68, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#f87171',
+              flexShrink: 0
+            }}>
+              <AlertTriangle size={24} />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                <span className="badge badge-amber" style={{ background: 'rgba(239, 68, 68, 0.35)', color: '#fca5a5', border: '1px solid #ef4444' }}>
+                  🚨 FOUNDER PRIORITY: AT RISK OF LOSS
+                </span>
+                <span style={{ fontSize: '0.75rem', color: '#fca5a5' }}>
+                  48h Lead Inaction Detected • KnotCore Lead Recovery Intelligence
+                </span>
+              </div>
+              <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#fef2f2' }}>
+                High-Value Lead: {atRiskLeads[0].name} (₹{(atRiskLeads[0].budget_inr / 10000000).toFixed(2)} Cr • {atRiskLeads[0].preferred_city}) has received no planner response for {atRiskLeads[0].hours_since_last_response || 48} hours!
+              </h4>
+              <div style={{ fontSize: '0.8rem', color: '#fca5a5', marginTop: '4px' }}>
+                ML Conversion Likelihood: <strong style={{ color: 'var(--color-gold-light)' }}>{atRiskLeads[0].conversion_score}%</strong> • Venue Draft: <em>"{atRiskLeads[0].follow_up_draft?.slice(0, 115)}..."</em>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', flexShrink: 0 }}>
+            <button
+              onClick={() => handleSendFollowup(atRiskLeads[0].id)}
+              className="btn-royal-gold"
+              style={{ fontSize: '0.82rem', padding: '10px 18px', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <Send size={14} /> Send Venue Follow-Up
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Follow-up Success Notification */}
+      {followupStatus && (
+        <div style={{
+          padding: '12px 20px',
+          background: 'rgba(16, 185, 129, 0.15)',
+          border: '1px solid rgba(16, 185, 129, 0.4)',
+          borderRadius: 'var(--radius-sm)',
+          color: '#34d399',
+          fontSize: '0.85rem'
+        }}>
+          {followupStatus}
+        </div>
+      )}
+
       {/* Top Banner: Season Overview & Live DB Status */}
       <div className="glass-panel" style={{
         padding: '24px 32px',
