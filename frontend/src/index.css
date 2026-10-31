@@ -1,0 +1,239 @@
+/* KnotCore Luxury Design System - The Royal Knot */
+:root {
+  --color-bg-deep: #050914;
+  --color-bg-card: rgba(13, 22, 48, 0.75);
+  --color-bg-card-hover: rgba(18, 30, 66, 0.85);
+  --color-bg-elevated: rgba(22, 38, 82, 0.6);
+  --color-border: rgba(212, 175, 55, 0.22);
+  --color-border-hover: rgba(212, 175, 55, 0.5);
+  --color-border-glow: rgba(212, 175, 55, 0.4);
+
+  --color-gold: #d4af37;
+  --color-gold-light: #f6e58d;
+  --color-gold-dark: #aa771c;
+  --color-gold-gradient: linear-gradient(135deg, #f6e58d 0%, #d4af37 50%, #aa771c 100%);
+  
+  --color-pink-royal: #e07a5f;
+  --color-pink-light: #f4a261;
+  --color-emerald: #10b981;
+  --color-emerald-bg: rgba(16, 185, 129, 0.15);
+  --color-ruby: #ef4444;
+  --color-ruby-bg: rgba(239, 68, 68, 0.15);
+  --color-sapphire: #3b82f6;
+  --color-sapphire-bg: rgba(59, 130, 246, 0.15);
+  --color-amber: #f59e0b;
+  --color-amber-bg: rgba(245, 158, 11, 0.15);
+
+  --color-text-main: #f8fafc;
+  --color-text-muted: #94a3b8;
+  --color-text-dim: #64748b;
+  --color-text-gold: #f3e5ab;
+
+  --font-royal: 'Cinzel', serif;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  --shadow-gold: 0 4px 20px -2px rgba(212, 175, 55, 0.25);
+  --shadow-card: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 1px 1px rgba(212, 175, 55, 0.15);
+  --shadow-elevated: 0 20px 40px -10px rgba(0, 0, 0, 0.7), 0 0 2px 1px rgba(212, 175, 55, 0.3);
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+
+  --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--color-bg-deep);
+  background-image: 
+    radial-gradient(circle at 15% 10%, rgba(212, 175, 55, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 85% 85%, rgba(224, 122, 95, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(11, 19, 43, 0.8) 0%, transparent 100%);
+  background-attachment: fixed;
+  color: var(--color-text-main);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg-deep);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gold);
+}
+
+/* Typography Utilities */
+.font-royal {
+  font-family: var(--font-royal);
+  letter-spacing: 0.04em;
+}
+
+.text-gold-gradient {
+  background: var(--color-gold-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+/* Glassmorphism Surface Base */
+.glass-panel {
+  background: var(--color-bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  transition: var(--transition);
+}
+
+.glass-panel:hover {
+  border-color: var(--color-border-hover);
+}
+
+/* Buttons */
+.btn-royal-gold {
+  background: var(--color-gold-gradient);
+  color: #070d1e;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.02em;
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: var(--shadow-gold);
+  transition: var(--transition);
+}
+
+.btn-royal-gold:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(212, 175, 55, 0.45);
+}
+
+.btn-royal-gold:active {
+  transform: translateY(0);
+}
+
+.btn-royal-outline {
+  background: transparent;
+  color: var(--color-gold-light);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 9px 18px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: var(--transition);
+}
+
+.btn-royal-outline:hover {
+  background: rgba(212, 175, 55, 0.12);
+  border-color: var(--color-gold);
+  transform: translateY(-2px);
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.badge-emerald {
+  background: var(--color-emerald-bg);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.badge-ruby {
+  background: var(--color-ruby-bg);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.badge-amber {
+  background: var(--color-amber-bg);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.badge-gold {
+  background: rgba(212, 175, 55, 0.15);
+  color: var(--color-gold-light);
+  border: 1px solid var(--color-border);
+}
+
+.badge-sapphire {
+  background: var(--color-sapphire-bg);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+/* Animations */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(212, 175, 55, 0.6);
+  }
+}
+
+.pulse-glow {
+  animation: pulseGlow 3s infinite ease-in-out;
+}
+
+@keyframes liveBlink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.9); }
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-emerald);
+  display: inline-block;
+  box-shadow: 0 0 8px var(--color-emerald);
+  animation: liveBlink 1.8s infinite ease-in-out;
+}
+
+.live-dot-ruby {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-ruby);
+  display: inline-block;
+  box-shadow: 0 0 8px var(--color-ruby);
+  animation: liveBlink 1.2s infinite ease-in-out;
+}
