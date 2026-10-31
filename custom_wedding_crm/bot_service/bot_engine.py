@@ -554,7 +554,7 @@ class KnotCoreBotEngine:
     def _handle_public_enquiry(self, chat_id: int, text: str, sender_name: str, session: Dict[str, Any]):
         """
         Dynamic multi-turn lead intake. Never injects hardcoded assumptions.
-        Actively asks for missing details (guests, budget, dates).
+        Actively answers any question, captures parameters, and prompts for missing details.
         """
         enquiry = session.setdefault("enquiry_data", {
             "destination": None,
@@ -565,94 +565,15 @@ class KnotCoreBotEngine:
             "preferred_dates": None,
         })
 
-        # Update enquiry state dynamically with the incoming message
-        updated = GeminiLeadExtractor.extract_or_update_enquiry(enquiry, text, sender_name)
-        session["enquiry_data"] = updated
+        result = GeminiLeadExtractor.process_public_chat(enquiry, text, sender_name)
+        session["enquiry_data"] = result.get("enquiry_data", enquiry)
+        reply = result.get("reply", "")
 
-        dest = updated.get("destination")
-        days = updated.get("duration_days")
-        guests = updated.get("guest_count")
-        budget = updated.get("budget_inr")
-        theme = updated.get("wedding_theme")
-        dates = updated.get("preferred_dates")
-        ai_reply = updated.get("ai_reply", "")
-        is_question = updated.get("is_general_question", False)
-
-        # Build list of missing required fields
-        missing = []
-        if not guests:
-            missing.append("guest count (how many attendees?)")
-        if not budget:
-            missing.append("approximate overall budget (in Lakhs or Crores)")
-        if not dest:
-            missing.append("preferred destination (Jaipur or Udaipur?)")
-
-        # CASE 1: Still missing essential details (e.g. user just said "we want a 3 days wedding in jaipur")
-        if missing:
-            # Format what we have captured so far
-            captured_lines = []
-            if dest:
-                captured_lines.append(f"• <b>Destination:</b> {dest.capitalize()}")
-            if days:
-                captured_lines.append(f"• <b>Duration:</b> {days} Days Celebration")
-            if guests:
-                captured_lines.append(f"• <b>Estimated Guests:</b> {guests} Guests")
-            if budget:
-                budget_fmt = f"₹{budget / 10000000.0:.2f} Cr" if budget >= 10000000 else f"₹{budget / 100000.0:.1f} Lakhs"
-                captured_lines.append(f"• <b>Budget:</b> {budget_fmt}")
-            if dates:
-                captured_lines.append(f"• <b>Preferred Season/Dates:</b> {dates}")
-            if theme:
-                captured_lines.append(f"• <b>Theme:</b> {theme}")
-
-            captured_text = "\n".join(captured_lines) if captured_lines else "• In discussion"
-
-            # Conversational follow-up asking specifically for missing details
-            follow_ups = []
-            if not guests:
-                follow_ups.append("1️⃣ <b>Guest Count:</b> Approximately how many guests are you expecting?")
-            if not budget:
-                follow_ups.append(f"{len(follow_ups) + 1}️⃣ <b>Budget Range:</b> What is your approximate overall budget (e.g. in Lakhs or Crores)?")
-            if not dates and len(follow_ups) < 3:
-                follow_ups.append(f"{len(follow_ups) + 1}️⃣ <b>Dates/Season:</b> Do you have a preferred month or season in mind?")
-
-            question_block = "\n".join(follow_ups)
-
-            # If Gemini generated a bespoke reply, incorporate it nicely
-            intro = f"✨ <b>Delighted to connect, {sender_name}!</b>\n\n"
-            if dest and days:
-                intro += f"A <b>{days}-day royal wedding celebration in {dest.capitalize()}</b> is a wonderful vision!\n\n"
-            elif dest:
-                intro += f"Planning a royal celebration in <b>{dest.capitalize()}</b> is truly magical!\n\n"
-            else:
-                intro += "Welcome to The Royal Knot luxury wedding planning.\n\n"
-
+        if reply:
+            self.send_message(chat_id, reply)
+        else:
             self.send_message(
                 chat_id,
-                f"{intro}"
-                f"📝 <b>Details Noted So Far:</b>\n{captured_text}\n\n"
-                f"To help our team prepare curated palace options and an accurate cost breakdown, could you please share:\n"
-                f"{question_block}\n\n"
-                "<i>Simply reply naturally with your numbers!</i>"
+                f"✨ <b>The Royal Knot:</b> Thank you for connecting with us, {sender_name}! "
+                "Tell us about your celebration vision in Jaipur or Udaipur."
             )
-            return
-
-        # CASE 2: All key parameters (destination, guests, budget) are now captured dynamically!
-        budget_fmt = f"₹{budget / 10000000.0:.2f} Crores" if budget >= 10000000 else f"₹{budget / 100000.0:.1f} Lakhs"
-        lead_ref = f"LEAD-{int(time.time()) % 10000:04d}"
-
-        self.send_message(
-            chat_id,
-            f"👑 <b>BESPOKE ROYAL ENQUIRY CONFIRMED!</b>\n\n"
-            f"Dear {sender_name},\n"
-            f"Thank you for sharing your celebration vision with The Royal Knot. Every detail has been dynamically captured:\n\n"
-            f"• <b>Destination:</b> {dest.capitalize()}\n"
-            f"• <b>Duration:</b> {days or 3} Days\n"
-            f"• <b>Expected Guests:</b> {guests} Guests\n"
-            f"• <b>Budget Ceiling:</b> {budget_fmt}\n"
-            f"• <b>Theme:</b> {theme or 'Heritage Royal'}\n"
-            f"• <b>Preferred Timeline:</b> {dates or 'Upcoming Wedding Season'}\n"
-            f"• <b>Lead Reference:</b> <code>{lead_ref}</code>\n\n"
-            "✨ <b>Next Step:</b> Our Lead Destination Planner is reviewing availability across our partner palaces (Rambagh, Samode, City Palace) and is compiling a personalized portfolio for your review.\n\n"
-            "📲 <i>Need to test other roles? Type <code>/role founder</code> or <code>/role planner</code> anytime!</i>"
-        )
