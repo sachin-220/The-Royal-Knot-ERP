@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- QR Access Pass Form View -->
+    <record id="view_wedding_qr_token_form" model="ir.ui.view">
+        <field name="name">wedding.qr.token.form</field>
+        <field name="model">wedding.qr.token</field>
+        <field name="arch" type="xml">
+            <form string="Role QR Access Pass">
+                <sheet>
+                    <div class="oe_title">
+                        <span class="o_form_label text-muted">KnotCore Instant Login Pass</span>
+                        <h1>
+                            <field name="name" placeholder="e.g. Palace Gate DJ Check-in Pass"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Role &amp; Context">
+                            <field name="role" widget="badge"/>
+                            <field name="wedding_id"/>
+                            <field name="partner_id"/>
+                            <field name="user_id"/>
+                            <field name="is_active" widget="boolean_toggle"/>
+                        </group>
+                        <group string="QR Image &amp; Deep-Link" class="text-center">
+                            <field name="qr_image" widget="image" class="oe_avatar" options="{'size': [180, 180]}"/>
+                            <field name="deep_link_url" widget="url"/>
+                        </group>
+                    </group>
+                    <group string="Usage Analytics">
+                        <field name="usage_count"/>
+                        <field name="last_scanned_at"/>
+                        <field name="token" groups="base.group_no_one"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- QR Access Pass Kanban View (Grid of printable/scannable QR cards!) -->
+    <record id="view_wedding_qr_token_kanban" model="ir.ui.view">
+        <field name="name">wedding.qr.token.kanban</field>
+        <field name="model">wedding.qr.token</field>
+        <field name="arch" type="xml">
+            <kanban class="o_kanban_mobile">
+                <field name="name"/>
+                <field name="role"/>
+                <field name="wedding_id"/>
+                <field name="qr_image"/>
+                <field name="deep_link_url"/>
+                <field name="usage_count"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_global_click p-3 text-center">
+                            <div class="mb-2">
+                                <field name="qr_image" widget="image" style="max-height: 140px; margin: 0 auto;"/>
+                            </div>
+                            <h4 class="mb-1"><strong><field name="name"/></strong></h4>
+                            <div class="mb-2">
+                                <field name="role" widget="badge"/>
+                            </div>
+                            <div class="text-muted small">
+                                Scans: <b><field name="usage_count"/></b> | <field name="wedding_id"/>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- QR Access Pass Tree View -->
+    <record id="view_wedding_qr_token_tree" model="ir.ui.view">
+        <field name="name">wedding.qr.token.tree</field>
+        <field name="model">wedding.qr.token</field>
+        <field name="arch" type="xml">
+            <tree string="Role QR Passes">
+                <field name="name"/>
+                <field name="role" widget="badge"/>
+                <field name="wedding_id"/>
+                <field name="partner_id"/>
+                <field name="usage_count"/>
+                <field name="last_scanned_at"/>
+                <field name="is_active" widget="boolean_toggle"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_wedding_qr_token" model="ir.actions.act_window">
+        <field name="name">QR Access Passes</field>
+        <field name="res_model">wedding.qr.token</field>
+        <field name="view_mode">kanban,tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Generate Instant QR Login Passes for Founders, Planners, Vendors, and Clients
+            </p>
+        </field>
+    </record>
+</odoo>

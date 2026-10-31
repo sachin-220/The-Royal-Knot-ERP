@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_wedding_agreement_planner,wedding.agreement.planner,model_wedding_agreement,custom_wedding_core.group_wedding_planner,1,1,1,0
+access_wedding_agreement_finance,wedding.agreement.finance,model_wedding_agreement,custom_wedding_core.group_wedding_finance,1,1,1,1
+access_wedding_agreement_founder,wedding.agreement.founder,model_wedding_agreement,custom_wedding_core.group_wedding_founder,1,1,1,1
+access_wedding_qr_token_planner,wedding.qr.token.planner,model_wedding_qr_token,custom_wedding_core.group_wedding_planner,1,1,1,0
+access_wedding_qr_token_founder,wedding.qr.token.founder,model_wedding_qr_token,custom_wedding_core.group_wedding_founder,1,1,1,1

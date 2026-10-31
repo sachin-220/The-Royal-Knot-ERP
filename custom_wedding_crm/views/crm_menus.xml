@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- CRM & Ingestion Menus under KnotCore -->
+    <menuitem id="menu_wedding_crm"
+              name="Client Intake &amp; Bot"
+              parent="custom_wedding_core.menu_wedding_root"
+              sequence="5"/>
+
+    <menuitem id="menu_wedding_leads"
+              name="Wedding Enquiries &amp; Leads"
+              parent="menu_wedding_crm"
+              action="crm.crm_lead_action_pipeline"
+              sequence="10"/>
+
+    <menuitem id="menu_wedding_agreements"
+              name="Digital Service Agreements"
+              parent="menu_wedding_crm"
+              action="action_wedding_agreement"
+              sequence="20"/>
+
+    <menuitem id="menu_wedding_qr_tokens"
+              name="Role QR Login Passes"
+              parent="menu_wedding_crm"
+              action="action_wedding_qr_token"
+              sequence="30"/>
+</odoo>

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extended CRM Lead Form View -->
+    <record id="view_crm_lead_form_wedding" model="ir.ui.view">
+        <field name="name">crm.lead.form.wedding</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+        <field name="arch" type="xml">
+            <!-- Add Convert to Wedding Action Button in Header -->
+            <xpath expr="//header" position="inside">
+                <button name="action_convert_to_wedding" string="Convert to Wedding" type="object"
+                        class="btn-success" attrs="{'invisible': [('wedding_id', '!=', False)]}"/>
+            </xpath>
+
+            <!-- Lead Recovery Alert Banner -->
+            <xpath expr="//sheet" position="before">
+                <div class="alert alert-danger mb-2" role="alert" 
+                     attrs="{'invisible': [('lead_recovery_flag', '=', False)]}">
+                    <div class="d-flex align-items-center mb-1">
+                        <i class="fa fa-exclamation-triangle fa-2x me-2 text-danger"/>
+                        <strong>Lead Recovery Alert: No Planner Response in 48+ Hours!</strong>
+                    </div>
+                    <p class="mb-1">This high-value luxury enquiry is at risk of falling cold. Suggested response:</p>
+                    <div class="p-2 bg-white rounded border border-danger text-dark">
+                        <field name="suggested_followup_message" readonly="1"/>
+                    </div>
+                </div>
+            </xpath>
+
+            <!-- Smart KPI Button for Conversion Probability -->
+            <xpath expr="//div[hasclass('oe_button_box')]" position="inside">
+                <button class="oe_stat_button" icon="fa-line-chart" type="action">
+                    <div class="o_stat_info">
+                        <span class="o_stat_value"><field name="conversion_probability_score" widget="percentage"/></span>
+                        <span class="o_stat_text">ML Conversion</span>
+                    </div>
+                </button>
+            </xpath>
+
+            <!-- Wedding Scope & Ingestion Tab -->
+            <xpath expr="//notebook" position="inside">
+                <page string="Royal Wedding Scope &amp; AI Ingestion">
+                    <group>
+                        <group string="Enquiry Destination &amp; Scope">
+                            <field name="destination" widget="radio" options="{'horizontal': true}"/>
+                            <field name="guest_count"/>
+                            <field name="wedding_theme"/>
+                            <field name="package_id"/>
+                        </group>
+                        <group string="Financials &amp; Bot Channel">
+                            <field name="budget_total" widget="monetary" options="{'currency_field': 'company_currency'}"/>
+                            <field name="lead_channel" widget="badge"/>
+                            <field name="wedding_id" readonly="1"/>
+                            <field name="last_interaction_datetime" readonly="1"/>
+                            <field name="lead_recovery_flag" invisible="1"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Extended CRM Lead Tree View -->
+    <record id="view_crm_lead_tree_wedding" model="ir.ui.view">
+        <field name="name">crm.lead.tree.wedding</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_case_tree_view_oppor"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="destination" widget="badge" optional="show"/>
+                <field name="guest_count" optional="show"/>
+                <field name="wedding_theme" optional="show"/>
+                <field name="lead_channel" widget="badge" optional="show"/>
+                <field name="conversion_probability_score" widget="percentage" optional="show"/>
+                <field name="lead_recovery_flag" widget="boolean_toggle" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Extended CRM Search View with Lead Recovery Filter -->
+    <record id="view_crm_lead_search_wedding" model="ir.ui.view">
+        <field name="name">crm.lead.search.wedding</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.view_crm_case_opportunities_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='assigned_to_me']" position="after">
+                <separator/>
+                <filter name="lead_recovery" string="Needs 48h Recovery" domain="[('lead_recovery_flag', '=', True)]"/>
+                <filter name="telegram_leads" string="Telegram Bot Enquiries" domain="[('lead_channel', '=', 'telegram')]"/>
+                <filter name="whatsapp_leads" string="WhatsApp Enquiries" domain="[('lead_channel', '=', 'whatsapp')]"/>
+                <filter name="high_conversion" string="High Conversion Probability (>75%)" domain="[('conversion_probability_score', '>=', 75.0)]"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

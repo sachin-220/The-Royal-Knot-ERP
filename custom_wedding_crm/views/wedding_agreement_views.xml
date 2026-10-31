@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Wedding Agreement Form View -->
+    <record id="view_wedding_agreement_form" model="ir.ui.view">
+        <field name="name">wedding.agreement.form</field>
+        <field name="model">wedding.agreement</field>
+        <field name="arch" type="xml">
+            <form string="Service Agreement">
+                <header>
+                    <button name="action_send_for_signature" string="Send for Mobile Signature" type="object"
+                            states="draft" class="btn-primary"/>
+                    <button name="action_sign_agreement" string="Digitally Sign &amp; Confirm Wedding" type="object"
+                            states="sent" class="btn-success"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,sent,signed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <span class="o_form_label text-muted">Client Service Agreement</span>
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Wedding &amp; Parties">
+                            <field name="wedding_id"/>
+                            <field name="partner_id"/>
+                            <field name="agreement_type"/>
+                        </group>
+                        <group string="Digital Execution Audit">
+                            <field name="signing_url" widget="url" readonly="1"/>
+                            <field name="signed_date" readonly="1"/>
+                            <field name="signer_ip_address" readonly="1"/>
+                            <field name="signing_token" groups="base.group_no_one"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Legal Terms &amp; Scope">
+                            <field name="terms_and_conditions"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Wedding Agreement Tree View -->
+    <record id="view_wedding_agreement_tree" model="ir.ui.view">
+        <field name="name">wedding.agreement.tree</field>
+        <field name="model">wedding.agreement</field>
+        <field name="arch" type="xml">
+            <tree string="Service Agreements" decoration-success="state == 'signed'" decoration-info="state == 'sent'">
+                <field name="name"/>
+                <field name="wedding_id"/>
+                <field name="partner_id"/>
+                <field name="agreement_type" widget="badge"/>
+                <field name="signed_date"/>
+                <field name="state" widget="badge" decoration-info="state == 'sent'" decoration-success="state == 'signed'"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_wedding_agreement" model="ir.actions.act_window">
+        <field name="name">Service Agreements</field>
+        <field name="res_model">wedding.agreement</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>
