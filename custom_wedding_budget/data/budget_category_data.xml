@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Sequence for Vendor Quotes -->
+        <record id="seq_wedding_vendor_quote" model="ir.sequence">
+            <field name="name">Wedding Vendor Quote Sequence</field>
+            <field name="code">custom.wedding.vendor.quote</field>
+            <field name="prefix">QT/%(year)s/</field>
+            <field name="padding">4</field>
+            <field name="company_id" eval="False"/>
+        </record>
+
+        <!-- 18 Standard Luxury Wedding Budget Benchmark Categories (Sum = 100.0%) -->
+        <record id="cat_venue" model="knotcore.budget.category">
+            <field name="name">Venue Rental &amp; Palace Grounds</field>
+            <field name="code">VENUE</field>
+            <field name="sequence">1</field>
+            <field name="default_percentage">18.0</field>
+            <field name="description">Heritage palace hire, lawn access fees, courtyards and heritage royalties.</field>
+        </record>
+
+        <record id="cat_catering" model="knotcore.budget.category">
+            <field name="name">Catering &amp; Royal Banqueting</field>
+            <field name="code">CATERING</field>
+            <field name="sequence">2</field>
+            <field name="default_percentage">24.0</field>
+            <field name="description">Multi-course degustation menus, royal thalis, bar services, and live culinary stations.</field>
+        </record>
+
+        <record id="cat_decor" model="knotcore.budget.category">
+            <field name="name">Floral Design &amp; Palace Decor</field>
+            <field name="code">DECOR</field>
+            <field name="sequence">3</field>
+            <field name="default_percentage">14.0</field>
+            <field name="description">Grand mandap structures, floral arches, royal drapery, chandeliers, and thematic tablescapes.</field>
+        </record>
+
+        <record id="cat_photo" model="knotcore.budget.category">
+            <field name="name">Photography &amp; Cinematography</field>
+            <field name="code">PHOTO</field>
+            <field name="sequence">4</field>
+            <field name="default_percentage">7.0</field>
+            <field name="description">Pre-wedding shoots, cinematic wedding teasers, drone aerial coverage, and heirloom leather albums.</field>
+        </record>
+
+        <record id="cat_entertainment" model="knotcore.budget.category">
+            <field name="name">Entertainment, DJ &amp; Royal Sangeet</field>
+            <field name="code">MUSIC</field>
+            <field name="sequence">5</field>
+            <field name="default_percentage">6.0</field>
+            <field name="description">Celebrity artists, Rajasthani folk troupes, symphony strings, club DJ, and anchor/emcee.</field>
+        </record>
+
+        <record id="cat_lighting" model="knotcore.budget.category">
+            <field name="name">Lighting &amp; Sound Production</field>
+            <field name="code">LIGHTING</field>
+            <field name="sequence">6</field>
+            <field name="default_percentage">5.0</field>
+            <field name="description">Palace facade projection mapping, intelligent moving heads, concert-grade Line Array audio, generators.</field>
+        </record>
+
+        <record id="cat_wardrobe" model="knotcore.budget.category">
+            <field name="name">Bridal &amp; Groom Royal Wardrobe</field>
+            <field name="code">WARDROBE</field>
+            <field name="sequence">7</field>
+            <field name="default_percentage">5.0</field>
+            <field name="description">Couture lehengas, royal sherwanis, safas, ceremonial swords, and bespoke jewelry styling.</field>
+        </record>
+
+        <record id="cat_hospitality" model="knotcore.budget.category">
+            <field name="name">Hospitality, Ushers &amp; Guest Services</field>
+            <field name="code">HOSPITALITY</field>
+            <field name="sequence">8</field>
+            <field name="default_percentage">4.0</field>
+            <field name="description">Luggage management, hotel check-in concierge, royal garlanding, shadow planners, and QR gate ushers.</field>
+        </record>
+
+        <record id="cat_transport" model="knotcore.budget.category">
+            <field name="name">Luxury Transportation &amp; Vintage Fleet</field>
+            <field name="code">TRANSPORT</field>
+            <field name="sequence">9</field>
+            <field name="default_percentage">3.0</field>
+            <field name="description">Airport transfer luxury coaches, vintage Rolls Royce baraat car, golf buggies, and VIP sedans.</field>
+        </record>
+
+        <record id="cat_makeup" model="knotcore.budget.category">
+            <field name="name">Hair, Makeup &amp; Styling</field>
+            <field name="code">MAKEUP</field>
+            <field name="sequence">10</field>
+            <field name="default_percentage">2.5</field>
+            <field name="description">Bridal makeup artist, celebrity hair stylist, family grooming lounge, and saree/dupatta draping team.</field>
+        </record>
+
+        <record id="cat_invitations" model="knotcore.budget.category">
+            <field name="name">Invitations &amp; Stationery</field>
+            <field name="code">INVITES</field>
+            <field name="sequence">11</field>
+            <field name="default_percentage">1.5</field>
+            <field name="description">Handcrafted box invitations, wax seal calligraphed scrolls, digital itinerary microsite, and keycard sleeves.</field>
+        </record>
+
+        <record id="cat_favors" model="knotcore.budget.category">
+            <field name="name">Luxury Favors &amp; Welcome Hampers</field>
+            <field name="code">FAVORS</field>
+            <field name="sequence">12</field>
+            <field name="default_percentage">2.0</field>
+            <field name="description">Silver ittar flasks, handloom Pashmina shawls, Jaipuri sweet boxes, and guest recovery kits.</field>
+        </record>
+
+        <record id="cat_rituals" model="knotcore.budget.category">
+            <field name="name">Royal Baraat &amp; Pheras Priest/Rituals</field>
+            <field name="code">RITUALS</field>
+            <field name="sequence">13</field>
+            <field name="default_percentage">1.5</field>
+            <field name="description">Vedic head priest, holy havan samagri, decorated tusker elephant, brass band, and floral chadar.</field>
+        </record>
+
+        <record id="cat_patisserie" model="knotcore.budget.category">
+            <field name="name">Patisserie, Cakes &amp; Dessert Bar</field>
+            <field name="code">CAKES</field>
+            <field name="sequence">14</field>
+            <field name="default_percentage">1.0</field>
+            <field name="description">6-Tier royal architectural wedding cake, artisan French macarons, and bespoke artisanal chocolates.</field>
+        </record>
+
+        <record id="cat_fireworks" model="knotcore.budget.category">
+            <field name="name">Fireworks &amp; Special Atmospheric FX</field>
+            <field name="code">FX</field>
+            <field name="sequence">15</field>
+            <field name="default_percentage">1.5</field>
+            <field name="description">Low-smoke cold pyrotechnic fountains, dry-ice fog waterfalls, and synchronized palace fireworks show.</field>
+        </record>
+
+        <record id="cat_security" model="knotcore.budget.category">
+            <field name="name">Royal Security &amp; VIP Bouncers</field>
+            <field name="code">SECURITY</field>
+            <field name="sequence">16</field>
+            <field name="default_percentage">1.0</field>
+            <field name="description">Armed security guards, metal detector door frames, CCTV palace perimeter control, and private bodyguards.</field>
+        </record>
+
+        <record id="cat_permits" model="knotcore.budget.category">
+            <field name="name">Palace Permits, NOC &amp; Licensing</field>
+            <field name="code">PERMITS</field>
+            <field name="sequence">17</field>
+            <field name="default_percentage">1.0</field>
+            <field name="description">IPRS music license, PPL copyright permit, local police NOC, fire safety permit, and drone clearances.</field>
+        </record>
+
+        <record id="cat_contingency" model="knotcore.budget.category">
+            <field name="name">Contingency Emergency Reserve</field>
+            <field name="code">CONTINGENCY</field>
+            <field name="sequence">18</field>
+            <field name="default_percentage">2.0</field>
+            <field name="description">Emergency rain waterproofing, backup 125kVA generator diesel, urgent wardrobe repair, medical standby.</field>
+        </record>
+    </data>
+</odoo>

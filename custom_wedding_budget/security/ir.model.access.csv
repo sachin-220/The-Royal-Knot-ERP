@@ -1,0 +1,10 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_budget_category_manager,knotcore.budget.category.manager,model_knotcore_budget_category,custom_wedding_core.group_wedding_founder,1,1,1,1
+access_budget_category_planner,knotcore.budget.category.planner,model_knotcore_budget_category,custom_wedding_core.group_wedding_planner,1,1,1,0
+access_budget_category_user,knotcore.budget.category.user,model_knotcore_budget_category,base.group_user,1,0,0,0
+access_budget_alloc_manager,knotcore.budget.allocation.manager,model_knotcore_budget_allocation,custom_wedding_core.group_wedding_founder,1,1,1,1
+access_budget_alloc_planner,knotcore.budget.allocation.planner,model_knotcore_budget_allocation,custom_wedding_core.group_wedding_planner,1,1,1,1
+access_budget_alloc_user,knotcore.budget.allocation.user,model_knotcore_budget_allocation,base.group_user,1,0,0,0
+access_vendor_quote_manager,custom.wedding.vendor.quote.manager,model_custom_wedding_vendor_quote,custom_wedding_core.group_wedding_founder,1,1,1,1
+access_vendor_quote_planner,custom.wedding.vendor.quote.planner,model_custom_wedding_vendor_quote,custom_wedding_core.group_wedding_planner,1,1,1,1
+access_vendor_quote_user,custom.wedding.vendor.quote.user,model_custom_wedding_vendor_quote,base.group_user,1,0,0,0

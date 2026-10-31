@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Budget Allocation Tree View -->
+    <record id="view_budget_allocation_tree" model="ir.ui.view">
+        <field name="name">knotcore.budget.allocation.tree</field>
+        <field name="model">knotcore.budget.allocation</field>
+        <field name="arch" type="xml">
+            <tree string="Wedding Budget Allocations" decoration-danger="status == 'over_budget'" decoration-warning="status == 'on_track'" decoration-success="status == 'under_budget'">
+                <field name="sequence" widget="handle"/>
+                <field name="wedding_id"/>
+                <field name="category_id"/>
+                <field name="percentage" string="Allocated %" sum="Total %"/>
+                <field name="allocated_amount" sum="Total Allocated"/>
+                <field name="committed_amount" sum="Total Committed"/>
+                <field name="variance_amount" sum="Total Variance"/>
+                <field name="status" widget="badge" decoration-danger="status == 'over_budget'" decoration-warning="status == 'on_track'" decoration-success="status == 'under_budget'"/>
+                <field name="currency_id" column_invisible="True"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Budget Allocation Form View -->
+    <record id="view_budget_allocation_form" model="ir.ui.view">
+        <field name="name">knotcore.budget.allocation.form</field>
+        <field name="model">knotcore.budget.allocation</field>
+        <field name="arch" type="xml">
+            <form string="Wedding Category Budget Allocation">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="category_id"/>
+                        <h1><field name="category_id"/></h1>
+                        <h3><field name="wedding_id"/></h3>
+                    </div>
+                    <group>
+                        <group string="Allocation Configuration">
+                            <field name="percentage" widget="percentage"/>
+                            <field name="allocated_amount" widget="monetary"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                        <group string="Commitment &amp; Variance Health">
+                            <field name="committed_amount" widget="monetary"/>
+                            <field name="variance_amount" widget="monetary"/>
+                            <field name="status" widget="badge" decoration-danger="status == 'over_budget'" decoration-warning="status == 'on_track'" decoration-success="status == 'under_budget'"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_budget_allocation" model="ir.actions.act_window">
+        <field name="name">Wedding Budget Allocations</field>
+        <field name="res_model">knotcore.budget.allocation</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

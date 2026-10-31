@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vendor Quote Form View -->
+    <record id="view_wedding_vendor_quote_form" model="ir.ui.view">
+        <field name="name">custom.wedding.vendor.quote.form</field>
+        <field name="model">custom.wedding.vendor.quote</field>
+        <field name="arch" type="xml">
+            <form string="Supplier Quotation">
+                <header>
+                    <button name="action_evaluate" string="Evaluate Proposal" type="object" invisible="state != 'draft'" class="oe_highlight"/>
+                    <button name="action_select_winner" string="🏆 1-Click Winner Selection (Generate PO)" type="object" invisible="state in ('winner', 'cancelled')" class="oe_highlight" confirm="Approving this quote will create a Purchase Order and automatically decline competing proposals in this category. Proceed?"/>
+                    <button name="action_extract_ocr" string="📄 Run Document OCR" type="object" class="btn-secondary"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,under_review,winner,declined"/>
+                </header>
+                <sheet>
+                    <!-- Price Anomaly Banner -->
+                    <div class="alert alert-danger" role="alert" invisible="not anomaly_detected" style="margin-bottom:15px;">
+                        <h4>⚠️ <b>STATISTICAL PRICE ANOMALY DETECTED (+<field name="anomaly_score" readonly="1"/>σ)</b></h4>
+                        <field name="anomaly_reason" readonly="1"/>
+                    </div>
+
+                    <div class="oe_button_box" name="button_box">
+                        <button name="%(purchase.purchase_rfq)d" type="action" class="oe_stat_button" icon="fa-shopping-cart" invisible="not purchase_order_id">
+                            <field name="purchase_order_id" string="Purchase Order" widget="statinfo"/>
+                        </button>
+                    </div>
+
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
+                        <h1><field name="name"/></h1>
+                        <h3><field name="vendor_id" placeholder="Select Luxury Supplier..."/></h3>
+                    </div>
+
+                    <group>
+                        <group string="Wedding &amp; Category Alignment">
+                            <field name="wedding_id"/>
+                            <field name="category_id"/>
+                            <field name="tax_included"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                        <group string="Commercial Pricing Terms">
+                            <field name="quoted_amount" widget="monetary"/>
+                            <field name="price_per_plate" widget="monetary"/>
+                            <field name="overtime_hourly_rate" widget="monetary"/>
+                            <field name="minimum_guest_requirement"/>
+                            <field name="menu_items_count"/>
+                        </group>
+                    </group>
+
+                    <group string="Multi-Factor Intelligence &amp; WCI Score">
+                        <group>
+                            <field name="rating_quality" widget="priority"/>
+                            <field name="rating_punctuality" widget="progressbar"/>
+                        </group>
+                        <group>
+                            <field name="past_complaints_count"/>
+                            <field name="availability_verified"/>
+                            <field name="composite_index_wci" widget="progressbar" string="Weighted Composite Index (WCI)"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Proposal Document &amp; OCR Engine">
+                            <group>
+                                <field name="quote_document" filename="quote_filename"/>
+                                <field name="quote_filename" invisible="1"/>
+                            </group>
+                            <group string="Extracted Text Pipeline">
+                                <field name="extracted_ocr_text" placeholder="Upload quotation PDF/image and click 'Run Document OCR' to auto-populate..."/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vendor Quote Tree View -->
+    <record id="view_wedding_vendor_quote_tree" model="ir.ui.view">
+        <field name="name">custom.wedding.vendor.quote.tree</field>
+        <field name="model">custom.wedding.vendor.quote</field>
+        <field name="arch" type="xml">
+            <tree string="Supplier Quotations" decoration-success="state == 'winner'" decoration-muted="state == 'declined'" decoration-danger="anomaly_detected">
+                <field name="name"/>
+                <field name="wedding_id"/>
+                <field name="vendor_id"/>
+                <field name="category_id"/>
+                <field name="quoted_amount" sum="Total Quotes"/>
+                <field name="price_per_plate"/>
+                <field name="composite_index_wci" widget="badge" decoration-success="composite_index_wci >= 75" decoration-warning="composite_index_wci &lt; 75 and composite_index_wci >= 50" decoration-danger="composite_index_wci &lt; 50"/>
+                <field name="anomaly_detected" widget="boolean_toggle"/>
+                <field name="state" widget="badge" decoration-success="state == 'winner'" decoration-warning="state == 'under_review'" decoration-muted="state == 'declined'"/>
+                <field name="purchase_order_id" widget="many2one"/>
+                <field name="currency_id" column_invisible="True"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_wedding_vendor_quote" model="ir.actions.act_window">
+        <field name="name">Supplier Quotations</field>
+        <field name="res_model">custom.wedding.vendor.quote</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Intake, compare and approve supplier quotations with Multi-Factor WCI intelligence.
+            </p>
+        </field>
+    </record>
+
+    <!-- Inherit custom.wedding Form to add Budget & Quote Tabs -->
+    <record id="view_wedding_form_inherit_budget" model="ir.ui.view">
+        <field name="name">custom.wedding.form.inherit.budget</field>
+        <field name="model">custom.wedding</field>
+        <field name="inherit_id" ref="custom_wedding_core.view_wedding_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_generate_default_allocations" string="Initialize 18-Category Budget Matrix" type="object" class="btn-secondary" invisible="state == 'completed'"/>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="18-Category Budget Matrix" name="budget_matrix">
+                    <group>
+                        <group>
+                            <field name="total_allocated_budget" widget="monetary"/>
+                            <field name="total_committed_quotes" widget="monetary"/>
+                        </group>
+                        <group>
+                            <field name="total_budget_variance" widget="monetary"/>
+                            <field name="allocation_sum_percentage" widget="progressbar" string="Allocation Matrix Total (%)"/>
+                        </group>
+                    </group>
+                    <field name="budget_allocation_ids">
+                        <tree editable="bottom" decoration-danger="status == 'over_budget'" decoration-warning="status == 'on_track'" decoration-success="status == 'under_budget'">
+                            <field name="category_id"/>
+                            <field name="percentage" widget="percentage" sum="Total %"/>
+                            <field name="allocated_amount" sum="Total Allocated"/>
+                            <field name="committed_amount" sum="Total Committed"/>
+                            <field name="variance_amount" sum="Total Variance"/>
+                            <field name="status" widget="badge" decoration-danger="status == 'over_budget'" decoration-warning="status == 'on_track'" decoration-success="status == 'under_budget'"/>
+                        </tree>
+                    </field>
+                </page>
+                <page string="Supplier Quotes &amp; Comparison" name="vendor_quotes">
+                    <field name="vendor_quote_ids">
+                        <tree decoration-success="state == 'winner'" decoration-muted="state == 'declined'" decoration-danger="anomaly_detected">
+                            <field name="name"/>
+                            <field name="vendor_id"/>
+                            <field name="category_id"/>
+                            <field name="quoted_amount"/>
+                            <field name="price_per_plate"/>
+                            <field name="composite_index_wci" widget="badge"/>
+                            <field name="anomaly_detected"/>
+                            <field name="state" widget="badge"/>
+                            <button name="action_select_winner" string="Select Winner" type="object" icon="fa-trophy" invisible="state in ('winner', 'declined')"/>
+                        </tree>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

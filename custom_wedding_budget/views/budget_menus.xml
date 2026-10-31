@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Budget & Finance Top Menu -->
+    <menuitem id="menu_wedding_budget_root"
+              name="Budget &amp; Procurement"
+              parent="custom_wedding_core.menu_wedding_root"
+              sequence="20"/>
+
+    <menuitem id="menu_wedding_vendor_quotes"
+              name="Supplier Quotations"
+              parent="menu_wedding_budget_root"
+              action="action_wedding_vendor_quote"
+              sequence="10"/>
+
+    <menuitem id="menu_wedding_budget_allocations"
+              name="Wedding Allocations"
+              parent="menu_wedding_budget_root"
+              action="action_budget_allocation"
+              sequence="20"/>
+
+    <menuitem id="menu_wedding_budget_categories"
+              name="18 Benchmark Categories"
+              parent="menu_wedding_budget_root"
+              action="action_budget_category"
+              sequence="30"/>
+</odoo>
