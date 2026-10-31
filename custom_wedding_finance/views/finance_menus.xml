@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Finance Top Menu -->
+    <menuitem id="menu_wedding_finance_root"
+              name="Settlements &amp; Finance"
+              parent="custom_wedding_core.menu_wedding_root"
+              sequence="40"/>
+
+    <menuitem id="menu_wedding_founder_cockpit"
+              name="👑 Founder Intelligence Cockpit"
+              parent="menu_wedding_finance_root"
+              action="action_founder_intelligence"
+              sequence="1"/>
+
+    <menuitem id="menu_wedding_client_milestones"
+              name="Client Milestone Invoices"
+              parent="menu_wedding_finance_root"
+              action="action_client_milestone"
+              sequence="10"/>
+
+    <menuitem id="menu_wedding_guest_passes"
+              name="Banquet Digital Guest Passes"
+              parent="menu_wedding_finance_root"
+              action="action_guest_pass"
+              sequence="20"/>
+
+    <menuitem id="menu_wedding_variations"
+              name="Live Variation Ledger"
+              parent="menu_wedding_finance_root"
+              action="action_wedding_variation"
+              sequence="30"/>
+
+    <menuitem id="menu_wedding_vendor_settlements"
+              name="Vendor 3-Way Settlements"
+              parent="menu_wedding_finance_root"
+              action="action_vendor_settlement"
+              sequence="40"/>
+
+    <!-- Inherit custom.wedding Form to add Finance Tabs -->
+    <record id="view_wedding_form_inherit_finance" model="ir.ui.view">
+        <field name="name">custom.wedding.form.inherit.finance</field>
+        <field name="model">custom.wedding</field>
+        <field name="inherit_id" ref="custom_wedding_core.view_wedding_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_generate_milestones" string="Generate 3-Stage Milestones (30-40-30%)" type="object" class="btn-secondary" invisible="state == 'completed'"/>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Client Milestone Billing (30-40-30%)" name="client_milestones">
+                    <group>
+                        <group>
+                            <field name="total_milestones_invoiced" widget="monetary"/>
+                        </group>
+                        <group>
+                            <field name="total_milestones_paid" widget="monetary" style="color:#157347; font-weight:bold;"/>
+                        </group>
+                    </group>
+                    <field name="milestone_ids">
+                        <tree decoration-success="state == 'paid'" decoration-warning="state == 'invoiced'">
+                            <field name="name"/>
+                            <field name="milestone_type"/>
+                            <field name="percentage" widget="percentage"/>
+                            <field name="amount"/>
+                            <field name="due_date"/>
+                            <field name="invoice_id"/>
+                            <field name="state" widget="badge"/>
+                            <button name="action_create_invoice" string="Invoice" type="object" icon="fa-file-text-o" invisible="state != 'pending'"/>
+                            <button name="action_mark_paid" string="Mark Paid" type="object" icon="fa-check-circle" invisible="state == 'paid'"/>
+                        </tree>
+                    </field>
+                </page>
+                <page string="Live Variation Ledger" name="variations">
+                    <group>
+                        <field name="total_variations_client" widget="monetary" string="Total Variations Billed to Couple"/>
+                    </group>
+                    <field name="variation_ids">
+                        <tree decoration-success="state == 'approved'" decoration-danger="state == 'rejected'">
+                            <field name="name"/>
+                            <field name="title"/>
+                            <field name="category_id"/>
+                            <field name="vendor_id"/>
+                            <field name="variation_amount_client"/>
+                            <field name="variation_amount_vendor"/>
+                            <field name="agency_markup_margin"/>
+                            <field name="state" widget="badge"/>
+                            <button name="action_approve_variation" string="Approve" type="object" icon="fa-check" invisible="state != 'draft'"/>
+                        </tree>
+                    </field>
+                </page>
+                <page string="Banquet Guest Passes &amp; Walk-Ins" name="guest_passes">
+                    <group>
+                        <group>
+                            <field name="total_guest_passes_count"/>
+                        </group>
+                        <group>
+                            <field name="walkin_guests_count" string="Walk-In Extra Guests (Host PIN Verified)" style="color:#d63384; font-weight:bold;"/>
+                        </group>
+                    </group>
+                    <field name="guest_pass_ids">
+                        <tree decoration-success="is_checked_in" decoration-warning="guest_category == 'walkin'">
+                            <field name="name"/>
+                            <field name="guest_name"/>
+                            <field name="guest_category" widget="badge"/>
+                            <field name="table_number"/>
+                            <field name="is_checked_in" widget="boolean_toggle"/>
+                            <field name="checkin_time"/>
+                        </tree>
+                    </field>
+                </page>
+                <page string="Vendor 3-Way Settlements" name="vendor_settlements">
+                    <field name="settlement_ids">
+                        <tree decoration-danger="matching_status in ('discrepancy', 'duplicate_suspect')" decoration-success="matching_status == 'matched'">
+                            <field name="name"/>
+                            <field name="vendor_id"/>
+                            <field name="category_id"/>
+                            <field name="contract_amount"/>
+                            <field name="approved_extras_amount"/>
+                            <field name="advance_paid_amount"/>
+                            <field name="final_settlement_payable"/>
+                            <field name="matching_status" widget="badge"/>
+                            <field name="state" widget="badge"/>
+                            <button name="action_approve_settlement" string="Approve" type="object" icon="fa-check" invisible="state != 'audit'"/>
+                        </tree>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

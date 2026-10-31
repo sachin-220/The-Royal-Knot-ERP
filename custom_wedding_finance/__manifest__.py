@@ -1,0 +1,32 @@
+# -*- coding: utf-8 -*-
+{
+    'name': 'KnotCore - Luxury Wedding Finance, Settlement & Founder Intelligence',
+    'version': '17.0.1.0.0',
+    'category': 'Events/Weddings',
+    'summary': '3-Stage Milestone Billing, Anti-Duplicate 60s Guest Passes, Live Variation Ledger, 3-Way Matching & Founder Intelligence Dashboard',
+    'sequence': 14,
+    'author': 'The Royal Knot Luxury Weddings',
+    'website': 'https://www.royalknot.in',
+    'license': 'LGPL-3',
+    'depends': [
+        'base',
+        'mail',
+        'account',
+        'custom_wedding_core',
+        'custom_wedding_budget',
+    ],
+    'data': [
+        'security/ir.model.access.csv',
+        'data/finance_sequence_data.xml',
+        'views/milestone_billing_views.xml',
+        'views/guest_pass_views.xml',
+        'views/variation_views.xml',
+        'views/three_way_matching_views.xml',
+        'views/founder_dashboard_views.xml',
+        'views/finance_menus.xml',
+    ],
+    'demo': [],
+    'installable': True,
+    'application': True,
+    'auto_install': False,
+}

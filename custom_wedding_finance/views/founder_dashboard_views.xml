@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Founder Intelligence Cockpit Form View -->
+    <record id="view_founder_intelligence_form" model="ir.ui.view">
+        <field name="name">knotcore.founder.intelligence.form</field>
+        <field name="model">knotcore.founder.intelligence</field>
+        <field name="arch" type="xml">
+            <form string="Executive Founder Intelligence Cockpit">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>👑 <field name="name"/></h1>
+                        <h3>Wedding Season: <field name="season_year"/></h3>
+                    </div>
+
+                    <group string="Season 2026-2027 Macro Performance">
+                        <group>
+                            <field name="total_season_weddings" string="Total Contracted Weddings"/>
+                            <field name="total_contracted_revenue" widget="monetary" style="font-size:1.3em; font-weight:bold; color:#0d6efd;"/>
+                            <field name="profit_margin_pct" widget="percentage" string="Net Profit Margin (%)"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                        <group string="Financial Leakage Quantification">
+                            <field name="financial_leakage_amount" widget="monetary" style="font-size:1.3em; font-weight:bold; color:#dc3545;"/>
+                            <field name="leakage_details" readonly="1" style="font-family:monospace; background-color:#fff3cd; padding:10px; border-radius:5px;"/>
+                        </group>
+                    </group>
+
+                    <group string="3-Tier Profitability Realization Cockpit">
+                        <group>
+                            <field name="projected_net_profit" widget="monetary" string="1. Initial Projected Margin"/>
+                            <field name="committed_net_profit" widget="monetary" string="2. Committed Margin (Locked POs)"/>
+                        </group>
+                        <group>
+                            <field name="actual_realized_profit" widget="monetary" string="3. Actual Realized Profit (To Date)" style="font-size:1.3em; font-weight:bold; color:#198754;"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="30 / 60 / 90-Day Cash Flow Forecast Projection">
+                            <group>
+                                <group string="Next 30 Days Liquidity">
+                                    <field name="cash_inflow_30d" widget="monetary" string="+ Milestone Inflow"/>
+                                    <field name="cash_outflow_30d" widget="monetary" string="- Vendor Advance Outflow"/>
+                                    <field name="net_liquidity_30d" widget="monetary" string="= Net Cash Buffer" style="font-weight:bold; color:#157347;"/>
+                                </group>
+                                <group string="Next 60 Days Liquidity">
+                                    <field name="cash_inflow_60d" widget="monetary" string="+ Milestone Inflow"/>
+                                    <field name="cash_outflow_60d" widget="monetary" string="- Vendor Advance Outflow"/>
+                                </group>
+                            </group>
+                            <group string="Next 90 Days Liquidity (Peak Season)">
+                                <group>
+                                    <field name="cash_inflow_90d" widget="monetary" string="+ Milestone Inflow"/>
+                                </group>
+                                <group>
+                                    <field name="cash_outflow_90d" widget="monetary" string="- Vendor Advance Outflow"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_founder_intelligence" model="ir.actions.act_window">
+        <field name="name">Founder Intelligence Cockpit</field>
+        <field name="res_model">knotcore.founder.intelligence</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+    </record>
+</odoo>
