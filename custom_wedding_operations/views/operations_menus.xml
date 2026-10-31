@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Operations Command Top Menu -->
+    <menuitem id="menu_wedding_operations_root"
+              name="Operations &amp; Command"
+              parent="custom_wedding_core.menu_wedding_root"
+              sequence="30"/>
+
+    <menuitem id="menu_wedding_tasks"
+              name="Task Graph Milestones"
+              parent="menu_wedding_operations_root"
+              action="action_wedding_task"
+              sequence="10"/>
+
+    <menuitem id="menu_wedding_run_sheets"
+              name="Minute-by-Minute Run Sheet"
+              parent="menu_wedding_operations_root"
+              action="action_wedding_run_sheet"
+              sequence="20"/>
+
+    <menuitem id="menu_wedding_delay_simulators"
+              name="Delay Ripple Simulator"
+              parent="menu_wedding_operations_root"
+              action="action_delay_simulator"
+              sequence="30"/>
+
+    <menuitem id="menu_wedding_gate_checkins"
+              name="Palace Gate Check-Ins"
+              parent="menu_wedding_operations_root"
+              action="action_vendor_gate_checkin"
+              sequence="40"/>
+
+    <menuitem id="menu_wedding_incidents"
+              name="Emergency Incident Desk"
+              parent="menu_wedding_operations_root"
+              action="action_wedding_incident"
+              sequence="50"/>
+</odoo>

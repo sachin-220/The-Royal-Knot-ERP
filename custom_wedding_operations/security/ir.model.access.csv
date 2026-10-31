@@ -1,0 +1,16 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_wedding_task_manager,custom.wedding.task.manager,model_custom_wedding_task,custom_wedding_core.group_wedding_founder,1,1,1,1
+access_wedding_task_planner,custom.wedding.task.planner,model_custom_wedding_task,custom_wedding_core.group_wedding_planner,1,1,1,1
+access_wedding_task_user,custom.wedding.task.user,model_custom_wedding_task,base.group_user,1,0,0,0
+access_delay_sim_manager,knotcore.delay.simulator.manager,model_knotcore_delay_simulator,custom_wedding_core.group_wedding_founder,1,1,1,1
+access_delay_sim_planner,knotcore.delay.simulator.planner,model_knotcore_delay_simulator,custom_wedding_core.group_wedding_planner,1,1,1,1
+access_delay_sim_user,knotcore.delay.simulator.user,model_knotcore_delay_simulator,base.group_user,1,0,0,0
+access_gate_checkin_manager,knotcore.vendor.gate.checkin.manager,model_knotcore_vendor_gate_checkin,custom_wedding_core.group_wedding_founder,1,1,1,1
+access_gate_checkin_planner,knotcore.vendor.gate.checkin.planner,model_knotcore_vendor_gate_checkin,custom_wedding_core.group_wedding_planner,1,1,1,1
+access_gate_checkin_user,knotcore.vendor.gate.checkin.user,model_knotcore_vendor_gate_checkin,base.group_user,1,1,1,0
+access_incident_manager,knotcore.wedding.incident.manager,model_knotcore_wedding_incident,custom_wedding_core.group_wedding_founder,1,1,1,1
+access_incident_planner,knotcore.wedding.incident.planner,model_knotcore_wedding_incident,custom_wedding_core.group_wedding_planner,1,1,1,1
+access_incident_user,knotcore.wedding.incident.user,model_knotcore_wedding_incident,base.group_user,1,1,1,0
+access_run_sheet_manager,knotcore.wedding.run.sheet.manager,model_knotcore_wedding_run_sheet,custom_wedding_core.group_wedding_founder,1,1,1,1
+access_run_sheet_planner,knotcore.wedding.run.sheet.planner,model_knotcore_wedding_run_sheet,custom_wedding_core.group_wedding_planner,1,1,1,1
+access_run_sheet_user,knotcore.wedding.run.sheet.user,model_knotcore_wedding_run_sheet,base.group_user,1,0,0,0

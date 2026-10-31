@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Gate Check-In Tree View -->
+    <record id="view_vendor_gate_checkin_tree" model="ir.ui.view">
+        <field name="name">knotcore.vendor.gate.checkin.tree</field>
+        <field name="model">knotcore.vendor.gate.checkin</field>
+        <field name="arch" type="xml">
+            <tree string="Palace Gate Check-Ins" decoration-danger="status == 'delayed_alert'" decoration-success="status == 'arrived'" decoration-warning="status == 'pending'">
+                <field name="name"/>
+                <field name="wedding_id"/>
+                <field name="vendor_id"/>
+                <field name="vendor_category"/>
+                <field name="venue_gate"/>
+                <field name="gate_otp"/>
+                <field name="scheduled_call_time"/>
+                <field name="actual_arrival_time"/>
+                <field name="delay_minutes" string="Delay (Mins)"/>
+                <field name="status" widget="badge" decoration-danger="status == 'delayed_alert'" decoration-success="status == 'arrived'" decoration-warning="status == 'pending'"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Gate Check-In Form View -->
+    <record id="view_vendor_gate_checkin_form" model="ir.ui.view">
+        <field name="name">knotcore.vendor.gate.checkin.form</field>
+        <field name="model">knotcore.vendor.gate.checkin</field>
+        <field name="arch" type="xml">
+            <form string="Palace Gate Supplier Check-In Pass">
+                <header>
+                    <field name="status" widget="statusbar" statusbar_visible="pending,arrived,delayed_alert"/>
+                </header>
+                <sheet>
+                    <div class="alert alert-danger" role="alert" invisible="status != 'delayed_alert'" style="margin-bottom:15px;">
+                        <h4>🚨 <b>15-MINUTE LATE TOLERANCE THRESHOLD BREACHED!</b></h4>
+                        <p>Supplier has not arrived within 15 minutes of scheduled call time. Dispatch coordinator immediately.</p>
+                    </div>
+
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
+                        <h1><field name="name"/></h1>
+                        <h3><field name="vendor_id"/></h3>
+                    </div>
+
+                    <group>
+                        <group string="Gate Access Parameters">
+                            <field name="wedding_id"/>
+                            <field name="vendor_category"/>
+                            <field name="venue_gate"/>
+                            <field name="gate_otp" readonly="1" style="font-size:1.4em; font-weight:bold; letter-spacing:4px; color:#c59b27;"/>
+                        </group>
+                        <group string="Punctuality Tracking">
+                            <field name="scheduled_call_time"/>
+                            <field name="actual_arrival_time"/>
+                            <field name="is_delayed" widget="boolean_toggle"/>
+                            <field name="delay_minutes"/>
+                        </group>
+                    </group>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_vendor_gate_checkin" model="ir.actions.act_window">
+        <field name="name">Palace Gate Check-In Passes</field>
+        <field name="res_model">knotcore.vendor.gate.checkin</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>
