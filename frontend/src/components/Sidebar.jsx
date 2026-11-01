@@ -1,14 +1,23 @@
 import React from 'react';
 import { 
   LayoutDashboard, Users, FileSpreadsheet, CheckSquare, 
-  ShieldCheck, FileText, Settings, Database, ArrowRight
+  ShieldCheck, FileText, Settings, Database, ArrowRight, Building2, LayoutGrid, Bot, TrendingUp, Clock, Receipt, Calendar, ScanLine
 } from 'lucide-react';
 
 export default function Sidebar({ activeTab, setActiveTab, dbHealth }) {
   const navItems = [
     { id: 'cockpit', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'event_schedule', label: 'Event Schedule (INQ Filter)', icon: Calendar },
+    { id: 'inquiry_quotations', label: 'Inquiry Quotations (INQ Filter)', icon: FileSpreadsheet },
+    { id: 'budget', label: 'Vendor Quotations & Comparison', icon: LayoutGrid },
+    { id: 'command_centre', label: 'Big Day Command Centre', icon: Clock },
+    { id: 'wristband_tracker', label: 'Wristbands & Visitors', icon: ScanLine },
+    { id: 'finance_settlement', label: 'Finance & Settlements', icon: Receipt },
+    { id: 'executive_bi', label: 'Executive BI & AI Copilot', icon: TrendingUp },
     { id: 'enquiries', label: 'User Enquiries & Leads', icon: Users },
-    { id: 'budget', label: 'Vendor Quotations & Comparison', icon: FileSpreadsheet },
+    { id: 'vendors', label: 'Vendor Directory (18 Vendors)', icon: Building2 },
+    { id: 'plansetter', label: 'Wedding Plan Setter', icon: LayoutGrid },
+    { id: 'vendor_coordination', label: 'Vendor Coordination (AI Bot)', icon: Bot },
   ];
 
   return (

@@ -19,6 +19,14 @@ export default function TopHeader({
     budget: {
       title: 'Vendor Quotations & Comparison Grid',
       subtitle: 'OCR quotation confirmation, fill-in-the-blanks engine, and side-by-side comparison.'
+    },
+    vendors: {
+      title: 'Vendor Directory & Partner Network (18 Categories)',
+      subtitle: 'Complete 18-category vendor master with full CRUD operations and dynamic email routing.'
+    },
+    plansetter: {
+      title: 'Wedding Plan & Floor Layout Setter',
+      subtitle: 'Interactive hall dimension architecture, drag & drop elements, custom partition lines & client export engine.'
     }
   };
 
