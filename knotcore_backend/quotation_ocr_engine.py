@@ -272,8 +272,22 @@ class QuotationOCREngine:
             desc = "Meyer Sound Concert Line Arrays & Moving Beam Lighting"
 
         # Inquiry Reference
-        inq_match = re.search(r'INQ[-_]?(\d+)', text, re.IGNORECASE)
-        inquiry_id = int(inq_match.group(1)) if inq_match else 11
+        inq_match = re.search(r'INQ[-_]?(?:2026[-_]?)?(\d+)', text, re.IGNORECASE)
+        inquiry_id = int(inq_match.group(1)) if inq_match else None
+        if not inquiry_id:
+            conn_inq = cls.get_db()
+            if conn_inq:
+                try:
+                    cur_inq = conn_inq.cursor()
+                    cur_inq.execute("SELECT id, inquiry_ref FROM crm_inquiries ORDER BY id DESC LIMIT 1;")
+                    r = cur_inq.fetchone()
+                    if r:
+                        inquiry_id = r[0]
+                    cur_inq.close()
+                    conn_inq.close()
+                except Exception:
+                    pass
+        inquiry_id = inquiry_id or 11
         inquiry_ref = f"INQ-{inquiry_id:04d}"
 
         # 4. Total Price

@@ -279,8 +279,9 @@ class KnotCoreBotEngine:
                 "preferred_dates": None,
             },
             "signed": False,
-            "inquiry_id": 11,
-            "inquiry_ref": "INQ-0011",
+            "inquiry_id": None,
+            "inquiry_ref": None,
+            "is_new_intake": True,
             "mode": None
         })
 
@@ -798,22 +799,17 @@ class KnotCoreBotEngine:
         parts = text.split()
         param = parts[1].lower() if len(parts) > 1 else ""
 
-        # 1. Scanned Client QR (scan.png): /start client_enquiry
-        if "client_enquiry" in param or "client" in param:
-            session["role"] = "public"
-            session["interview_step"] = 1
-            self.send_message(
-                chat_id,
-                f" <b>QR Scan Verified: Connected to The Royal Knot Unified Bot!</b>\n"
-                f"Padharo Sa, {sender_name}! We are honored to plan your dream heritage wedding."
-            )
-            self._prompt_interview_step(chat_id, session, 1)
-            return
+        # 1. Dedicated Vendor Bot or Scanned Vendor QR Routing
+        is_vendor = (
+            self.role_mode == "vendor"
+            or "vendor" in param
+            or "vendor_portal" in param
+            or session.get("role") in ["vendor", "vendor_new", "vendor_bidder"]
+        )
 
-        # 2. Scanned Vendor QR (vendor_scan.png): /start vendor_portal
-        if "vendor_portal" in param or "vendor" in param:
-            # Check if vendor is already officially registered in DB
+        if is_vendor:
             is_registered = False
+            v_name = None
             conn = self._get_db()
             if conn:
                 try:
@@ -822,8 +818,10 @@ class KnotCoreBotEngine:
                         SELECT * FROM vendor_registrations
                         WHERE chat_id = %s AND status = 'OFFICIALLY_REGISTERED' LIMIT 1;
                     """, (chat_id,))
-                    if cur.fetchone():
+                    v_row = cur.fetchone()
+                    if v_row:
                         is_registered = True
+                        v_name = v_row.get("vendor_name")
                     cur.close()
                     conn.close()
                 except Exception:
@@ -831,14 +829,15 @@ class KnotCoreBotEngine:
 
             if is_registered:
                 session["role"] = "vendor_bidder"
-                self._send_vendor_oneway_mirror_welcome(chat_id, sender_name)
+                session["vendor_name"] = v_name
+                self._send_vendor_oneway_mirror_welcome(chat_id, v_name or sender_name)
                 return
             else:
                 session["role"] = "vendor_new"
                 session["vendor_state"] = "awaiting_credentials"
                 vendor_welcome = (
                     "<b>THE ROYAL KNOT — VENDOR ONBOARDING PORTAL</b>\n\n"
-                    f"Welcome, {sender_name}! You are connecting as a new supplier.\n\n"
+                    f"Welcome, {sender_name}! You are connecting as an accredited luxury wedding supplier.\n\n"
                     "<b>Step 1 of 2: Submit Credentials</b>\n"
                     "Please reply with your credentials to register:\n"
                     "• <b>Company / Vendor Name</b>\n"
@@ -851,26 +850,49 @@ class KnotCoreBotEngine:
                 self.send_message(chat_id, vendor_welcome)
                 return
 
-        # 3. Role tokens from Phase 1
+        # 2. Scanned Founder QR
         if "founder" in param:
             session["role"] = "founder"
-            self.send_message(chat_id, " <b>QR Scan Verified: Authenticated as FOUNDER / EXECUTIVE</b>")
-            self._send_role_welcome(chat_id, session)
-            return
-        elif "planner" in param:
-            session["role"] = "planner"
-            self.send_message(chat_id, " <b>QR Scan Verified: Authenticated as LEAD WEDDING PLANNER</b>")
+            self.send_message(chat_id, "<b>QR Scan Verified: Authenticated as FOUNDER / EXECUTIVE</b>")
             self._send_role_welcome(chat_id, session)
             return
 
-        # Default public start
+        # 3. Scanned Planner QR
+        if "planner" in param:
+            session["role"] = "planner"
+            self.send_message(chat_id, "<b>QR Scan Verified: Authenticated as LEAD WEDDING PLANNER</b>")
+            self._send_role_welcome(chat_id, session)
+            return
+
+        # 4. Customer / Public Intake: Fresh clean intake with new inquiry ID
+        session.clear()
         session["role"] = "public"
+        session["name"] = sender_name
         session["interview_step"] = 1
-        self.send_message(
-            chat_id,
-            f" <b>Welcome to The Royal Knot, {sender_name}!</b>\n\n"
+        session["enquiry_data"] = {
+            "couple_names": None,
+            "destination": None,
+            "duration_days": None,
+            "guest_count": None,
+            "budget_inr": None,
+            "wedding_theme": None,
+            "preferred_dates": None,
+            "is_partial": False
+        }
+        session["signed"] = False
+        session["schedule_confirmed"] = False
+        session["state"] = None
+        session["step"] = None
+        session["mode"] = None
+        session["inquiry_id"] = None
+        session["inquiry_ref"] = None
+        session["is_new_intake"] = True
+
+        welcome_text = (
+            f"<b>Welcome to The Royal Knot, {sender_name}!</b>\n\n"
             "We plan bespoke luxury destination weddings across heritage palaces in <b>Jaipur & Udaipur</b>."
         )
+        self.send_message(chat_id, welcome_text)
         self._prompt_interview_step(chat_id, session, 1)
 
     # --- 4-Step Client Guided Interview ---
@@ -919,84 +941,71 @@ class KnotCoreBotEngine:
         current_step = session.get("interview_step", 1)
         enquiry = session.get("enquiry_data", {})
 
-        # Process with Gemini 4-step dynamic parser
+        # Process with Gemini / NLP dynamic parser
         result = GeminiLeadExtractor.process_public_chat(enquiry, text, sender_name, current_step)
         session["enquiry_data"] = result.get("enquiry_data", enquiry)
         data = session["enquiry_data"]
 
-        # 1. Missing Fields Gap-Filling Check
         is_partial = data.get("is_partial") or session.get("is_partial") or any(k in text.lower() for k in ["partial", "half day", "half-day", "1 day", "single day", "only sangeet", "only reception", "only wedding"])
         if is_partial:
             data["is_partial"] = True
             data["duration_days"] = 1
             session["is_partial"] = True
 
-        missing = []
-        if not data.get("destination"):
-            missing.append("royal destination (e.g. Udaipur or Jaipur)")
-        if not data.get("duration_days") and not is_partial:
-            missing.append("number of days (e.g. 3-day royal affair or partial celebration)")
-        if not data.get("guest_count"):
-            missing.append("guest count (e.g. 400 guests)")
-        if not data.get("budget_inr"):
-            missing.append("estimated total budget (e.g. 3 Crores)")
+        has_couple = bool(data.get("couple_names"))
+        has_dest = bool(data.get("destination"))
+        has_days = bool(data.get("duration_days") or is_partial)
+        has_guests = bool(data.get("guest_count"))
+        has_budget = bool(data.get("budget_inr"))
 
-        # If any necessary detail is missing, ask specifically for it
-        if missing:
-            if len(missing) == 1:
-                if not data.get("budget_inr"):
-                    ask_msg = (
-                        f"Splendid! We have registered your celebration for {data.get('couple_names', sender_name)} in {data.get('destination', 'Udaipur')}.\n\n"
-                        "Could you please specify your <b>estimated celebration budget</b>? (e.g. <b>3 Crores</b>, ₹2.5 Cr)"
-                    )
-                elif not data.get("guest_count"):
-                    ask_msg = "Approximately how many esteemed guests will grace your celebrations? (e.g. <b>400 guests</b>)"
-                elif not data.get("duration_days") and not is_partial:
-                    ask_msg = "How many days of celebrations are you envisioning? (e.g. <b>3 days</b> or <b>partial / 1-day / half-day celebration</b>)"
-                else:
-                    ask_msg = f"Which royal destination would you prefer? (e.g. <b>Udaipur</b> or <b>Jaipur</b>)"
-            else:
-                missing_str = ", ".join(f"<b>{m}</b>" for m in missing)
-                ask_msg = (
-                    f"Welcome to The Royal Knot, {sender_name}!\n\n"
-                    f"To curate your royal celebration, could you please share: {missing_str}?"
-                )
-            self.send_message(chat_id, ask_msg)
+        is_complete = bool(result.get("is_completed") or (has_dest and has_days and has_guests and has_budget))
+
+        if is_complete:
+            # All Required Fields Collected! Ingest brand new inquiry into PostgreSQL crm_inquiries
+            session["interview_step"] = 5
+            inquiry_id = self._save_inquiry_to_db(chat_id, sender_name, data, session)
+            session["inquiry_id"] = inquiry_id
+            inq_ref = session.get("inquiry_ref") or f"INQ-{inquiry_id:04d}"
+
+            # Send rich confirmation with Next Action
+            budget_val = data.get("budget_inr") or 30000000.0
+            pax = data.get("guest_count") or 400
+            ml_pax = int(pax * 1.17)
+            plates = int(pax * 1.31)
+
+            dest_str = (data.get('destination') or 'Udaipur').capitalize()
+            span_str = "Partial Royal Celebration (1 Day / Half-Day based on timing)" if is_partial else f"{data.get('duration_days', 3)} Days"
+            confirm_msg = (
+                "<b>YOUR ROYAL ENQUIRY IS OFFICIALLY REGISTERED!</b>\n\n"
+                f"• <b>Inquiry Ref:</b> <code>{inq_ref}</code>\n"
+                f"• <b>Couple:</b> {data.get('couple_names', sender_name)}\n"
+                f"• <b>Destination:</b> {dest_str}\n"
+                f"• <b>Celebration Span:</b> {span_str}\n"
+                f"• <b>Confirmed Guests:</b> {pax}\n"
+                f"• <b>ML Predicted Turnout:</b> {ml_pax} Guests (+17% Buffer)\n"
+                f"• <b>Shahi Banqueting Plates:</b> {plates} Plates (+31% Buffer)\n"
+                f"• <b>Budget Allocated:</b> ₹{(budget_val/10000000):.2f} Cr\n\n"
+                "<b>Instant Transmission:</b> Your portfolio has been routed to the <b>KnotCore Executive Dashboard</b>."
+            )
+            self.send_message(chat_id, confirm_msg)
+
+            # Present the 25+ Wedding Themes Catalog
+            session["state"] = "awaiting_theme_selection"
+            self._send_themes_catalog(chat_id)
             return
 
-        # 2. All Required Fields Collected! Ingest into PostgreSQL crm_inquiries
-        session["interview_step"] = 5
-        inquiry_id = self._save_inquiry_to_db(chat_id, sender_name, data)
-        session["inquiry_id"] = inquiry_id
+        # Next Step Progression
+        reply = result.get("reply")
+        next_step = result.get("next_step", current_step + 1)
+        session["interview_step"] = next_step
 
-        # Send rich confirmation with Next Action
-        budget_val = data.get("budget_inr") or 30000000.0
-        pax = data.get("guest_count") or 400
-        ml_pax = int(pax * 1.17)
-        plates = int(pax * 1.31)
+        if reply:
+            self.send_message(chat_id, reply)
+        else:
+            self._prompt_interview_step(chat_id, session, next_step)
 
-        dest_str = (data.get('destination') or 'Udaipur').capitalize()
-        span_str = "Partial Royal Celebration (1 Day / Half-Day based on timing)" if is_partial else f"{data.get('duration_days', 3)} Days"
-        confirm_msg = (
-            "<b>YOUR ROYAL ENQUIRY IS OFFICIALLY REGISTERED!</b>\n\n"
-            f"• <b>Inquiry Ref:</b> <code>INQ-2026-{inquiry_id or '01'}</code>\n"
-            f"• <b>Couple:</b> {data.get('couple_names', sender_name)}\n"
-            f"• <b>Destination:</b> {dest_str}\n"
-            f"• <b>Celebration Span:</b> {span_str}\n"
-            f"• <b>Confirmed Guests:</b> {pax}\n"
-            f"• <b>ML Predicted Turnout:</b> {ml_pax} Guests (+17% Buffer)\n"
-            f"• <b>Shahi Banqueting Plates:</b> {plates} Plates (+31% Buffer)\n"
-            f"• <b>Budget Allocated:</b> ₹{(budget_val/10000000):.2f} Cr\n\n"
-            "<b>Instant Transmission:</b> Your portfolio has been routed to the <b>KnotCore Executive Dashboard</b>."
-        )
-        self.send_message(chat_id, confirm_msg)
-
-        # 3. Present the 25+ Wedding Themes Catalog
-        session["state"] = "awaiting_theme_selection"
-        self._send_themes_catalog(chat_id)
-
-    def _save_inquiry_to_db(self, chat_id: int, sender_name: str, data: Dict[str, Any]) -> Optional[int]:
-        """Saves or updates enquiry in PostgreSQL crm_inquiries table with live sync to dashboard."""
+    def _save_inquiry_to_db(self, chat_id: int, sender_name: str, data: Dict[str, Any], session: Optional[Dict[str, Any]] = None) -> Optional[int]:
+        """Saves brand new enquiry or updates current session enquiry in PostgreSQL crm_inquiries."""
         conn = self._get_db()
         if not conn:
             return None
@@ -1013,29 +1022,24 @@ class KnotCoreBotEngine:
             days = data.get("duration_days") or 3
             theme = data.get("wedding_theme") or None
 
-            # Deduplication: Check if inquiry already exists for this chat_id
-            existing_id = None
-            cur.execute("""
-                SELECT id FROM crm_inquiries 
-                WHERE chat_id = %s 
-                ORDER BY id DESC LIMIT 1;
-            """, (chat_id,))
-            row = cur.fetchone()
-            if row:
-                existing_id = row[0]
+            active_id = session.get("inquiry_id") if session else None
 
-            if existing_id:
+            if active_id:
+                # Update existing inquiry created within this current active session
                 cur.execute("""
                     UPDATE crm_inquiries 
                     SET name = %s, preferred_city = %s, guest_count = %s,
                         budget_inr = %s, duration_days = %s, wedding_theme = COALESCE(%s, wedding_theme)
                     WHERE id = %s
-                    RETURNING id;
-                """, (couple, city, pax, budget, days, theme, existing_id))
-                inquiry_id = existing_id
+                    RETURNING id, inquiry_ref;
+                """, (couple, city, pax, budget, days, theme, active_id))
+                row = cur.fetchone()
+                inquiry_id = row[0]
+                actual_ref = row[1] or f"INQ-{inquiry_id:04d}"
                 conn.commit()
-                print(f"[SUCCESS] Updated existing inquiry #{inquiry_id} for {couple} in knotcore_db!")
+                print(f"[SUCCESS] Updated active inquiry #{inquiry_id} ({actual_ref}) for {couple} in knotcore_db!")
             else:
+                # ALWAYS create a brand new inquiry ID for every new intake!
                 cur.execute("""
                     INSERT INTO crm_inquiries (
                         name, phone, telegram_id, preferred_city, guest_count,
@@ -1044,16 +1048,15 @@ class KnotCoreBotEngine:
                     RETURNING id;
                 """, (couple, "+91 98290 11223", f"@{sender_name}", city, pax, budget, 0.98, days, chat_id, theme))
                 inquiry_id = cur.fetchone()[0]
+                actual_ref = f"INQ-{inquiry_id:04d}"
+                cur.execute("UPDATE crm_inquiries SET inquiry_ref = %s WHERE id = %s;", (actual_ref, inquiry_id))
                 conn.commit()
-                print(f"[SUCCESS] Ingested new inquiry #{inquiry_id} for {couple} into knotcore_db!")
+                print(f"[SUCCESS] Ingested brand new inquiry #{inquiry_id} ({actual_ref}) for {couple} into knotcore_db!")
 
-            # Ensure inquiry_ref is populated and stored in session
-            inq_ref = f"INQ-{inquiry_id:04d}"
-            cur.execute("UPDATE crm_inquiries SET inquiry_ref = COALESCE(inquiry_ref, %s) WHERE id = %s RETURNING inquiry_ref;", (inq_ref, inquiry_id))
-            actual_ref = cur.fetchone()[0]
-            conn.commit()
-            session["inquiry_ref"] = actual_ref
-            session["inquiry_id"] = inquiry_id
+            if session is not None:
+                session["inquiry_ref"] = actual_ref
+                session["inquiry_id"] = inquiry_id
+                session["is_new_intake"] = False
 
             cur.close()
             conn.close()
@@ -2672,48 +2675,107 @@ class KnotCoreBotEngine:
     # --- Vendor Blind Bidding ("One-Way Mirror") ---
 
     def _send_vendor_oneway_mirror_welcome(self, chat_id: int, sender_name: str):
+        # Fetch latest active RFPs from crm_inquiries
+        rfps_list = []
+        conn = self._get_db()
+        if conn:
+            try:
+                cur = conn.cursor(cursor_factory=RealDictCursor)
+                cur.execute("SELECT inquiry_ref, name, preferred_city, guest_count FROM crm_inquiries ORDER BY id DESC LIMIT 3;")
+                for row in cur.fetchall():
+                    ref = row.get("inquiry_ref") or "INQ-0011"
+                    couple = row.get("name") or "Royal Couple"
+                    city = row.get("preferred_city") or "Udaipur"
+                    pax = row.get("guest_count") or 400
+                    rfps_list.append(f"• <b>{ref}</b> ({couple}, {city} — {pax} Guests)")
+                cur.close()
+                conn.close()
+            except Exception:
+                pass
+        rfp_str = "\n".join(rfps_list) if rfps_list else "• <b>INQ-0011</b> (Aarav & Diya, Udaipur — 400 Guests)"
+
         welcome_text = (
-            " <b>THE ROYAL KNOT — VENDOR PROCUREMENT NETWORK</b>\n\n"
+            "<b>THE ROYAL KNOT — VENDOR PROCUREMENT NETWORK</b>\n\n"
             f"Welcome, {sender_name}! You have entered the verified supplier bidding portal.\n\n"
-            " <b>ONE-WAY MIRROR BLIND BIDDING PROTOCOL:</b>\n"
+            "<b>ONE-WAY MIRROR BLIND BIDDING PROTOCOL:</b>\n"
             "• All RFP specifications and proposals are strictly confidential.\n"
             "• When you submit a quote, it is sent <b>directly and privately</b> to the KnotCore Platform Admin.\n"
             "• <b>Competing vendors cannot see your bid, price, or identity.</b> (Zero price collusion)\n\n"
-            " <b>Active RFPs for Aarav & Diya Royal Wedding (Jaipur):</b>\n"
-            "1. <code>CAT-02</code> Royal Catering & Banqueting (524 Buffet Plates)\n"
-            "2. <code>CAT-03</code> Floral Architecture & Production\n"
-            "3. <code>CAT-05</code> Concert Light & Sound AV (Meyer Sound Line Arrays)\n\n"
+            "<b>Active RFPs Open for Bidding:</b>\n"
+            f"{rfp_str}\n\n"
             "<b>To submit a confidential quote, reply with:</b>\n"
-            "<code>/bid &lt;category_code&gt; &lt;your_company_name&gt; &lt;amount_in_inr&gt;</code>\n\n"
+            "<code>/bid &lt;category_code&gt; &lt;your_company_name&gt; &lt;amount_in_inr&gt;</code>\n"
+            "<i>(Or include inquiry ref: <code>/bid INQ-0011 CAT-02 Vendor 5100000</code>)</i>\n\n"
             "<i>Example:</i> <code>/bid CAT-02 Shahi Rajputana Caterers 5100000</code>"
         )
         self.send_message(chat_id, welcome_text)
 
     def _handle_vendor_bid(self, chat_id: int, text: str, session: Dict[str, Any]):
         """Handles /bid CAT-02 VendorName 5100000 with WCI scoring and +2-sigma anomaly check."""
-        parts = text.split(maxsplit=3)
-        if len(parts) < 4:
+        # 1. Parse target inquiry
+        inq_match = re.search(r'INQ[-_]?(?:2026[-_]?)?(\d+)', text, re.IGNORECASE)
+        target_inq_id = int(inq_match.group(1)) if inq_match else session.get("inquiry_id")
+        if not target_inq_id:
+            conn_i = self._get_db()
+            if conn_i:
+                try:
+                    cur_i = conn_i.cursor()
+                    cur_i.execute("SELECT id, inquiry_ref FROM crm_inquiries ORDER BY id DESC LIMIT 1;")
+                    r_i = cur_i.fetchone()
+                    if r_i:
+                        target_inq_id = r_i[0]
+                    cur_i.close()
+                    conn_i.close()
+                except Exception:
+                    pass
+        target_inq_id = target_inq_id or 11
+        target_inq_ref = f"INQ-{target_inq_id:04d}"
+
+        # Clean text without the inquiry token if present
+        clean_text = re.sub(r'INQ[-_]?(?:2026[-_]?)?\d+', '', text, flags=re.IGNORECASE).strip()
+        parts = clean_text.split()
+
+        # Extract Category Code
+        cat_match = re.search(r'(CAT-\d{2})', clean_text, re.IGNORECASE)
+        cat_code = cat_match.group(1).upper() if cat_match else "CAT-02"
+
+        # Extract Quoted Price
+        nums = [float(n.replace(',', '')) for n in re.findall(r'\b\d{5,10}\b', clean_text)]
+        if not nums:
+            # Check for crore / lakh
+            cr_m = re.search(r'(\d+(?:\.\d+)?)\s*(?:cr|crore|crores)', clean_text, re.IGNORECASE)
+            lakh_m = re.search(r'(\d+(?:\.\d+)?)\s*(?:lakh|lakhs|lac|lacs|l)\b', clean_text, re.IGNORECASE)
+            if cr_m:
+                nums = [float(cr_m.group(1)) * 10000000.0]
+            elif lakh_m:
+                nums = [float(lakh_m.group(1)) * 100000.0]
+
+        if not nums:
             self.send_message(
                 chat_id,
-                "️ <b>Invalid bid format.</b> Please use:\n"
+                "<b>Invalid bid format.</b> Please use:\n"
                 "<code>/bid &lt;category_code&gt; &lt;vendor_name&gt; &lt;amount_in_inr&gt;</code>\n"
                 "Example: <code>/bid CAT-02 Shahi Kitchens 5100000</code>"
             )
             return
 
-        cat_code = parts[1].upper()
-        vendor_name = parts[2]
-        try:
-            quoted_price = float(parts[3].replace(',', '').strip())
-        except ValueError:
-            self.send_message(chat_id, "️ Invalid amount. Please provide a numeric value in INR.")
-            return
+        quoted_price = nums[-1]
 
-        # Historical benchmark stats for demo categories
+        # Extract Vendor Name
+        vendor_name = session.get("vendor_name")
+        if not vendor_name:
+            # Remove /bid, cat_code, and number from text to get name
+            name_parts = [p for p in parts if not p.lower().startswith('/bid') and p.upper() != cat_code and not re.search(r'\d+', p)]
+            vendor_name = " ".join(name_parts).strip() if name_parts else "Verified Royal Supplier"
+
         benchmarks = {
+            "CAT-01": {"name": "Venue & Heritage Royalty", "avg": 5500000.0, "std": 500000.0},
             "CAT-02": {"name": "Royal Catering & Banqueting", "avg": 5000000.0, "std": 400000.0},
             "CAT-03": {"name": "Floral Architecture & Production", "avg": 3000000.0, "std": 250000.0},
+            "CAT-04": {"name": "Bespoke Thematic Decor & Styling", "avg": 2250000.0, "std": 200000.0},
             "CAT-05": {"name": "Light, Sound & Concert AV", "avg": 1500000.0, "std": 120000.0},
+            "CAT-06": {"name": "Celebrity & Folk Entertainment", "avg": 1250000.0, "std": 100000.0},
+            "CAT-07": {"name": "Cinematography & Royal Portraiture", "avg": 1500000.0, "std": 150000.0},
         }
         bench = benchmarks.get(cat_code, {"name": "Specialized Royal Service", "avg": quoted_price, "std": quoted_price * 0.1})
 
@@ -2728,8 +2790,9 @@ class KnotCoreBotEngine:
         quality = 95.0
         delivery = 92.0
         financial = 90.0
-        wci_score = (0.35 * price_ratio) + (0.30 * quality) + (0.20 * delivery) + (0.15 * financial)
-        wci_score = round(wci_score, 2)
+        wci_score = round((0.35 * price_ratio) + (0.30 * quality) + (0.20 * delivery) + (0.15 * financial), 2)
+
+        item_desc = f"Royal {bench['name']} Package"
 
         # Ingest into PostgreSQL vendor_quotes table
         conn = self._get_db()
@@ -2740,34 +2803,43 @@ class KnotCoreBotEngine:
                 cur.execute("""
                     INSERT INTO vendor_quotes (
                         wedding_id, category_code, category_name, vendor_name, quoted_price,
+                        item_description, quantity, unit_rate,
                         historical_avg, std_dev, quality_score, delivery_score,
-                        financial_stability_score, wci_score, anomaly_flag, status
-                    ) VALUES (1, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        financial_stability_score, wci_score, anomaly_flag, status,
+                        inquiry_id, inquiry_ref
+                    ) VALUES (1, %s, %s, %s, %s, %s, 1, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     RETURNING id;
                 """, (
                     cat_code, bench["name"], vendor_name, quoted_price,
+                    item_desc, quoted_price,
                     hist_avg, std_dev, quality, delivery, financial,
-                    wci_score, is_anomaly, 'rejected' if is_anomaly else 'submitted'
+                    wci_score, is_anomaly, 'rejected' if is_anomaly else 'submitted',
+                    target_inq_id, target_inq_ref
                 ))
                 quote_id = cur.fetchone()[0]
                 conn.commit()
                 cur.close()
                 conn.close()
+                print(f"[SUCCESS] Ingested quote #{quote_id} for '{vendor_name}' under inquiry {target_inq_ref}!")
             except Exception as e:
                 print(f"[DB Vendor Quote Error] {e}")
                 if conn:
                     conn.close()
 
         # Send private confirmation (One-Way Mirror)
+        anomaly_note = "\n\n<b>[+2-SIGMA ANOMALY FLAGGED]:</b> Your quoted price exceeds +2 Standard Deviations from historical palace benchmarks." if is_anomaly else ""
         self.send_message(
             chat_id,
-            " <b>CONFIDENTIAL QUOTE SECURELY TRANSMITTED!</b>\n\n"
+            "<b>CONFIDENTIAL QUOTE SECURELY TRANSMITTED!</b>\n\n"
+            f"• <b>Inquiry Reference:</b> <code>{target_inq_ref}</code>\n"
             f"• <b>Bid Reference:</b> <code>BID-{quote_id or secrets.randbelow(900)+100}</code>\n"
             f"• <b>Category:</b> {cat_code} ({bench['name']})\n"
             f"• <b>Vendor:</b> {vendor_name}\n"
-            f"• <b>Quoted Price:</b> ₹{(quoted_price/100000):.2f} Lakhs\n"
-            f"• <b>WCI Evaluation Score:</b> <b>{wci_score} / 100</b>\n\n"
-            " <b>ONE-WAY MIRROR GUARANTEE:</b>\n"
+            f"• <b>Quoted Price:</b> ₹{(quoted_price/100000):.2f} Lakhs (₹{quoted_price:,.2f})\n"
+            f"• <b>WCI Evaluation Score:</b> <b>{wci_score} / 100</b>\n"
+            f"• <b>Dashboard Status:</b> VERIFIED & LIVE IN COMPARISON GRID"
+            f"{anomaly_note}\n\n"
+            "<b>ONE-WAY MIRROR GUARANTEE:</b>\n"
             "Your quote is private to you and the KnotCore Platform Admin. No competing vendors in the group can view your bid."
         )
 

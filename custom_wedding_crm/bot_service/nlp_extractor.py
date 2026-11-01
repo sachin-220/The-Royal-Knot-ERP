@@ -19,7 +19,7 @@ class GeminiLeadExtractor:
     failover (gemini-3.5-flash, gemini-flash-latest, gemini-2.5-flash-lite)
     and an intelligent offline dialog fallback.
     """
-    CANDIDATE_MODELS = ["gemini-3-flash-preview", "gemini-flash-latest", "gemini-flash-lite-latest", "gemini-3.1-flash-lite-preview"]
+    CANDIDATE_MODELS = ["gemini-2.5-flash", "gemini-flash-latest", "gemini-flash-lite-latest"]
 
     @classmethod
     def _get_api_key(cls) -> str:
@@ -47,7 +47,7 @@ class GeminiLeadExtractor:
                     data=json.dumps(payload).encode('utf-8'),
                     headers={'Content-Type': 'application/json'}
                 )
-                with urllib.request.urlopen(req, timeout=12) as response:
+                with urllib.request.urlopen(req, timeout=3) as response:
                     res = json.loads(response.read().decode('utf-8'))
                     return res['candidates'][0]['content']['parts'][0]['text']
             except Exception:
@@ -169,12 +169,15 @@ class GeminiLeadExtractor:
             p2_parts = [w for w in couple_match.group(2).split() if w.lower() not in stop_words]
             if p1_parts and p2_parts:
                 merged["couple_names"] = f"{' '.join(p1_parts).capitalize()} & {' '.join(p2_parts).capitalize()}"
-        elif not merged.get("couple_names") and ("&" in text or " and " in text) and len(text.split()) <= 4:
-            clean_parts = [w for w in text.split() if w.lower() not in stop_words]
-            merged["couple_names"] = " ".join(clean_parts).title()
-        elif not merged.get("couple_names"):
+        elif ("&" in text or " and " in text) and len(text.split()) <= 6:
+            # e.g. "Rohit & Simran, Udaipur" or "Aarav and Diya"
+            c_text = re.sub(r'[,;]+', ' ', text).strip()
+            c_parts = [w for w in c_text.split() if w.lower() not in stop_words and not w.isdigit()]
+            if len(c_parts) >= 2:
+                merged["couple_names"] = " ".join(c_parts).title()
+        elif not merged.get("couple_names") and current_step >= 2:
             clean_sender = sender_name.replace("@", "").strip()
-            merged["couple_names"] = f"{clean_sender} & Partner" if clean_sender else "Aarav & Diya"
+            merged["couple_names"] = f"{clean_sender} & Partner" if clean_sender and clean_sender.lower() != "valued guest" else "Aarav & Diya"
 
         if 'jaipur' in text_lower:
             merged['destination'] = 'Jaipur'
@@ -198,10 +201,16 @@ class GeminiLeadExtractor:
             merged['duration_days'] = d_count
             if d_count == 1:
                 merged['is_partial'] = True
+        elif (current_step == 2 or not merged.get("duration_days")) and text.strip().isdigit() and 1 <= int(text.strip()) <= 14:
+            merged['duration_days'] = int(text.strip())
+            if merged['duration_days'] == 1:
+                merged['is_partial'] = True
 
         guest_match = re.search(r'(\d+)\s*(?:guests?|people|pax|members?|attendees?|invitees?)', text_lower)
         if guest_match:
             merged['guest_count'] = int(guest_match.group(1))
+        elif (current_step == 3 or (merged.get("destination") and not merged.get("guest_count"))) and text.strip().isdigit() and int(text.strip()) >= 20:
+            merged['guest_count'] = int(text.strip())
 
         crore_match = re.search(r'(\d+(?:\.\d+)?)\s*(?:cr|crore|crores)', text_lower)
         lakh_match = re.search(r'(\d+(?:\.\d+)?)\s*(?:lakh|lakhs|lac|lacs|l)\b', text_lower)
@@ -209,6 +218,17 @@ class GeminiLeadExtractor:
             merged['budget_inr'] = float(crore_match.group(1)) * 10000000.0
         elif lakh_match:
             merged['budget_inr'] = float(lakh_match.group(1)) * 100000.0
+        elif current_step == 4 or (merged.get("guest_count") and not merged.get("budget_inr")):
+            clean_num = re.sub(r'[^\d\.]', '', text).strip()
+            if clean_num:
+                try:
+                    f_val = float(clean_num)
+                    if f_val >= 100000:
+                        merged['budget_inr'] = f_val
+                    elif 0.5 <= f_val <= 100:
+                        merged['budget_inr'] = f_val * 10000000.0
+                except ValueError:
+                    pass
 
         date_match = re.search(r'\b(december|january|february|march|april|may|june|july|august|september|october|november|winter|spring|autumn)\b', text_lower)
         if date_match:
