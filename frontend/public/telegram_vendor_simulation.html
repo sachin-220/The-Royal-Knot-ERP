@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Telegram Web — @Royalknot_vendors_bot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0e1621;
+      color: #f5f5f5;
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+    .sidebar {
+      width: 380px;
+      background: #17212b;
+      border-right: 1px solid #0e1621;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-header {
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #17212b;
+      border-bottom: 1px solid #0e1621;
+    }
+    .chat-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: #2b5278;
+      cursor: pointer;
+    }
+    .chat-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #3b82f6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #fff;
+      font-size: 1.1rem;
+    }
+    .chat-info { flex: 1; }
+    .chat-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+    .badge-bot { background: rgba(99, 102, 241, 0.25); color: #c7d2fe; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; }
+    .chat-preview { font-size: 0.8rem; color: #7f91a4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
+
+    .chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #0e1621;
+      position: relative;
+    }
+    .chat-header {
+      padding: 14px 24px;
+      background: #17212b;
+      border-bottom: 1px solid #0e1621;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .messages-container {
+      flex: 1;
+      padding: 24px 32px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .msg {
+      max-width: 680px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 0.92rem;
+      line-height: 1.55;
+      position: relative;
+      word-wrap: break-word;
+    }
+    .msg-in {
+      align-self: flex-start;
+      background: #182533;
+      border-bottom-left-radius: 2px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .msg-out {
+      align-self: flex-end;
+      background: #2b5278;
+      border-bottom-right-radius: 2px;
+    }
+    .msg-time {
+      font-size: 0.7rem;
+      color: #7f91a4;
+      text-align: right;
+      margin-top: 6px;
+    }
+    .msg code {
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(0, 0, 0, 0.35);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #fef08a;
+      font-size: 0.85rem;
+    }
+    .input-bar {
+      padding: 16px 24px;
+      background: #17212b;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-top: 1px solid #0e1621;
+    }
+    .input-field {
+      flex: 1;
+      background: #0e1621;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 12px 18px;
+      border-radius: 20px;
+      color: #fff;
+      font-size: 0.95rem;
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Left Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div style="font-weight: 800; font-size: 1.15rem; color: #fff;">Telegram Web</div>
+    </div>
+    <div class="chat-item">
+      <div class="chat-avatar">VP</div>
+      <div class="chat-info">
+        <div class="chat-title">
+          The Royal Knot Vendors
+          <span class="badge-bot">BOT</span>
+        </div>
+        <div class="chat-preview">OTP VERIFIED! YOU ARE OFFICIALLY REGISTERED</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat Area -->
+  <div class="chat-area">
+    <div class="chat-header">
+      <div class="chat-avatar">VP</div>
+      <div>
+        <div style="font-weight: 700; font-size: 1.05rem;">The Royal Knot Vendors Bot</div>
+        <div style="font-size: 0.78rem; color: #3b82f6;">procurement &bull; one-way mirror bidding gateway</div>
+      </div>
+    </div>
+
+    <div class="messages-container" id="chatStream">
+      <!-- 1. /start -->
+      <div class="msg msg-out">
+        <div>/start</div>
+        <div class="msg-time">10:55 AM</div>
+      </div>
+
+      <!-- 2. Onboarding Portal Prompt -->
+      <div class="msg msg-in">
+        <div>
+          <b>THE ROYAL KNOT &mdash; VENDOR ONBOARDING PORTAL</b><br><br>
+          Welcome, Sachin! You are connecting as an accredited luxury wedding supplier.<br><br>
+          <b>Step 1 of 2: Submit Credentials</b><br>
+          Please reply with your credentials to register:<br>
+          &bull; <b>Company / Vendor Name</b><br>
+          &bull; <b>Service Category</b> (e.g. Royal Catering, Floral Decor, Light & Sound, Photography, Logistics)<br>
+          &bull; <b>Official Business Email Address</b><br>
+          &bull; <b>Contact Phone Number</b><br><br>
+          <b>Please reply in format:</b><br>
+          <code>Vendor Name, Category, email@domain.com, 9829012345</code>
+        </div>
+        <div class="msg-time">10:55 AM</div>
+      </div>
+
+      <!-- 3. Credentials Submitted -->
+      <div class="msg msg-out">
+        <div>Sachin Decorators, Floral Architecture, sachin.decor@gmail.com, 9829011223</div>
+        <div class="msg-time">10:56 AM</div>
+      </div>
+
+      <!-- 4. Bot Status: Pending Approval -->
+      <div class="msg msg-in">
+        <div>
+          <b>CREDENTIALS SUBMITTED SUCCESSFULLY!</b><br><br>
+          &bull; <b>Vendor Name:</b> Sachin Decorators<br>
+          &bull; <b>Service Category:</b> Floral Architecture<br>
+          &bull; <b>Official Email:</b> sachin.decor@gmail.com<br>
+          &bull; <b>Phone:</b> 9829011223<br>
+          &bull; <b>Registration Status:</b> <b>PENDING DASHBOARD APPROVAL</b><br><br>
+          <b>Next Steps:</b><br>
+          1. Your application is now visible on the <b>Lead Planner &amp; Admin Dashboard</b>.<br>
+          2. Once approved, a <b>6-digit verification OTP</b> will be dispatched to your email and Telegram.<br>
+          3. Reply with the OTP here to activate blind bidding.
+        </div>
+        <div class="msg-time">10:56 AM</div>
+      </div>
+
+      <!-- 5. OTP Entered after Admin Dashboard Approval -->
+      <div class="msg msg-out">
+        <div>482195</div>
+        <div class="msg-time">10:57 AM</div>
+      </div>
+
+      <!-- 6. Bot Verified & Active -->
+      <div class="msg msg-in">
+        <div>
+          <b>OTP VERIFIED! YOU ARE OFFICIALLY REGISTERED &amp; LOGGED IN!</b><br><br>
+          Welcome to The Royal Knot Verified Vendor Roster, <b>Sachin Decorators</b>!<br><br>
+          &bull; <b>Status:</b> <b>OFFICIALLY REGISTERED (res_partner)</b><br>
+          &bull; <b>One-Way Mirror Procurement:</b> ACTIVATED<br>
+          &bull; <b>Live RFPs:</b> You can now submit confidential blind bids:<br>
+          <code>/bid CAT-02 Sachin Decorators 4800000</code><br>
+          &bull; <b>Palace Gate Attendance:</b> Check-in using <code>/attend 1</code> or live geotag photo.
+        </div>
+        <div class="msg-time">10:57 AM</div>
+      </div>
+
+      <!-- 7. Blind Bid Submission -->
+      <div class="msg msg-out">
+        <div>/bid CAT-02 Sachin Decorators 4800000</div>
+        <div class="msg-time">10:58 AM</div>
+      </div>
+
+      <!-- 8. Bid Accepted & Evaluated -->
+      <div class="msg msg-in">
+        <div>
+          <b>ONE-WAY MIRROR BLIND BID RECEIVED &amp; WCI RANKED!</b><br><br>
+          &bull; <b>Target Wedding:</b> INQ-0020 (Rohit &amp; Simran, Udaipur)<br>
+          &bull; <b>Supplier:</b> Sachin Decorators<br>
+          &bull; <b>Category:</b> Floral Architecture (CAT-02)<br>
+          &bull; <b>Commercial Quotation:</b> ₹48.00 Lakhs (₹48,00,000.00)<br>
+          &bull; <b>WCI Composite Score:</b> <b>95.8 / 100</b><br>
+          &bull; <b>Anomaly Status:</b> Passed (&lt; 2-Sigma Threshold)<br>
+          &bull; <b>Security:</b> Placed into blind comparison matrix. Competing suppliers cannot view your rates.
+        </div>
+        <div class="msg-time">10:58 AM</div>
+      </div>
+
+    </div>
+
+    <!-- Bottom Input Field -->
+    <div class="input-bar">
+      <input type="text" class="input-field" placeholder="Send a command or /attend..." readonly value="/attend 1" />
+    </div>
+  </div>
+
+</body>
+</html>

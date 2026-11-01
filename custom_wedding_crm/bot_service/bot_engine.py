@@ -579,7 +579,7 @@ class KnotCoreBotEngine:
             return
 
         # 4. Vendor OTP Verification
-        if (session.get("vendor_state") == "awaiting_otp" or session.get("role") in ["vendor_new", "vendor"]) and text.strip().isdigit() and len(text.strip()) == 6:
+        if (session.get("vendor_state") == "awaiting_otp" or session.get("role") in ["vendor_new", "vendor"]) and text.strip().isdigit() and len(text.strip()) in [4, 6]:
             self._handle_vendor_otp_verification(chat_id, text.strip(), sender_name, session)
             return
 

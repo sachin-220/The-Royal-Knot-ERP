@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Telegram Web — @Royalknot_bot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0e1621;
+      color: #f5f5f5;
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+    /* Left Chat List */
+    .sidebar {
+      width: 380px;
+      background: #17212b;
+      border-right: 1px solid #0e1621;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-header {
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #17212b;
+      border-bottom: 1px solid #0e1621;
+    }
+    .chat-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: #2b5278;
+      cursor: pointer;
+    }
+    .chat-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #d4af37, #996515);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #fff;
+      font-size: 1.1rem;
+    }
+    .chat-info { flex: 1; }
+    .chat-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+    .badge-bot { background: rgba(212, 175, 55, 0.2); color: #fef08a; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; }
+    .chat-preview { font-size: 0.8rem; color: #7f91a4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
+
+    /* Main Chat Area */
+    .chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #0e1621;
+      position: relative;
+    }
+    .chat-header {
+      padding: 14px 24px;
+      background: #17212b;
+      border-bottom: 1px solid #0e1621;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .messages-container {
+      flex: 1;
+      padding: 24px 32px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .msg {
+      max-width: 680px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 0.92rem;
+      line-height: 1.55;
+      position: relative;
+      word-wrap: break-word;
+    }
+    .msg-in {
+      align-self: flex-start;
+      background: #182533;
+      border-bottom-left-radius: 2px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .msg-out {
+      align-self: flex-end;
+      background: #2b5278;
+      border-bottom-right-radius: 2px;
+    }
+    .msg-time {
+      font-size: 0.7rem;
+      color: #7f91a4;
+      text-align: right;
+      margin-top: 6px;
+    }
+    .msg code {
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(0, 0, 0, 0.35);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #fef08a;
+      font-size: 0.85rem;
+    }
+    .venue-img-card {
+      width: 100%;
+      border-radius: 8px;
+      margin: 8px 0;
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      max-height: 260px;
+      object-fit: cover;
+    }
+    .pdf-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-top: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .pdf-icon {
+      width: 36px;
+      height: 36px;
+      background: #ef4444;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.75rem;
+      color: #fff;
+    }
+
+    /* Input Bar */
+    .input-bar {
+      padding: 16px 24px;
+      background: #17212b;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-top: 1px solid #0e1621;
+    }
+    .input-field {
+      flex: 1;
+      background: #0e1621;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 12px 18px;
+      border-radius: 20px;
+      color: #fff;
+      font-size: 0.95rem;
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Left Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div style="font-weight: 800; font-size: 1.15rem; color: #fff;">Telegram Web</div>
+    </div>
+    <div class="chat-item">
+      <div class="chat-avatar">RK</div>
+      <div class="chat-info">
+        <div class="chat-title">
+          The Royal Knot Concierge
+          <span class="badge-bot">BOT</span>
+        </div>
+        <div class="chat-preview">YOUR ROYAL ENQUIRY IS OFFICIALLY REGISTERED!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat Area -->
+  <div class="chat-area">
+    <div class="chat-header">
+      <div class="chat-avatar">RK</div>
+      <div>
+        <div style="font-weight: 700; font-size: 1.05rem;">The Royal Knot Concierge</div>
+        <div style="font-size: 0.78rem; color: #10b981;">bot &bull; active live concurrency daemon</div>
+      </div>
+    </div>
+
+    <div class="messages-container" id="chatStream">
+      <!-- 1. /start -->
+      <div class="msg msg-out">
+        <div>/start</div>
+        <div class="msg-time">10:48 AM</div>
+      </div>
+
+      <!-- 2. Bot Step 1 Prompt -->
+      <div class="msg msg-in">
+        <div>
+          <b>Welcome to The Royal Knot, Rohit!</b><br><br>
+          We plan bespoke luxury destination weddings across heritage palaces in <b>Jaipur & Udaipur</b>.<br><br>
+          <b>Step 1 of 4: The Couple & Royal Destination</b><br>
+          Please share the names of the <b>Bride & Groom</b>, and which royal destination calls to your heart (Jaipur or Udaipur).
+        </div>
+        <div class="msg-time">10:48 AM</div>
+      </div>
+
+      <!-- 3. Couple Input -->
+      <div class="msg msg-out">
+        <div>Rohit & Simran, Udaipur</div>
+        <div class="msg-time">10:49 AM</div>
+      </div>
+
+      <!-- 4. Bot Step 2 Prompt -->
+      <div class="msg msg-in">
+        <div>
+          Magnificent choice for <b>Rohit & Simran</b> in <b>Udaipur</b>!<br><br>
+          <b>Step 2 of 4: Celebration Span & Dates</b><br>
+          How many days of celebrations are you envisioning (e.g. <b>3-day royal affair</b>: Mehendi, Sangeet, Royal Pheras, Reception)?
+        </div>
+        <div class="msg-time">10:49 AM</div>
+      </div>
+
+      <!-- 5. Duration Input -->
+      <div class="msg msg-out">
+        <div>3 days</div>
+        <div class="msg-time">10:49 AM</div>
+      </div>
+
+      <!-- 6. Bot Step 3 Prompt -->
+      <div class="msg msg-in">
+        <div>
+          A 3-day royal celebration will be breathtaking!<br><br>
+          <b>Step 3 of 4: Royal Guestlist Estimate</b><br>
+          Approximately how many esteemed guests will grace your celebrations? <i>(Our ML Turnout Engine will compute outstation arrival buffers automatically!)</i>
+        </div>
+        <div class="msg-time">10:50 AM</div>
+      </div>
+
+      <!-- 7. Guests Input -->
+      <div class="msg msg-out">
+        <div>400</div>
+        <div class="msg-time">10:50 AM</div>
+      </div>
+
+      <!-- 8. Bot Step 4 Prompt -->
+      <div class="msg msg-in">
+        <div>
+          400 guests will create an imperial celebration.<br><br>
+          <b>Step 4 of 4: Budget Range & Thematic Vision</b><br>
+          What is your anticipated total celebration budget range (e.g. <b>₹2.5 Cr</b>)?
+        </div>
+        <div class="msg-time">10:50 AM</div>
+      </div>
+
+      <!-- 9. Budget Input -->
+      <div class="msg msg-out">
+        <div>2.5 Cr</div>
+        <div class="msg-time">10:51 AM</div>
+      </div>
+
+      <!-- 10. Registration Confirmed + Theme Catalog -->
+      <div class="msg msg-in">
+        <div>
+          <b>YOUR ROYAL ENQUIRY IS OFFICIALLY REGISTERED!</b><br><br>
+          &bull; <b>Inquiry Ref:</b> <code>INQ-0020</code><br>
+          &bull; <b>Couple:</b> Rohit & Simran<br>
+          &bull; <b>Destination:</b> Udaipur<br>
+          &bull; <b>Celebration Span:</b> 3 Days<br>
+          &bull; <b>Confirmed Guests:</b> 400<br>
+          &bull; <b>ML Predicted Turnout:</b> 468 Guests (+17% Outstation Buffer)<br>
+          &bull; <b>Shahi Banqueting Plates:</b> 524 Plates (+31% Catering Buffer)<br>
+          &bull; <b>Budget Allocated:</b> ₹2.50 Cr<br><br>
+          <b>THE ROYAL KNOT &mdash; 25+ CURATED WEDDING THEMES</b><br>
+          1. Heritage Palace Feel with Royal Marigold and Lotus Decor<br>
+          2. Coastal Beach Sunset Mandap on Ocean Sand<br>
+          3. Floating Lake Mandap & Candlelit Water Pavilion<br><br>
+          <i>Reply with theme number (e.g. 1) to synthesize your venue decor visualization!</i>
+        </div>
+        <div class="msg-time">10:51 AM</div>
+      </div>
+
+      <!-- 11. Theme Selection -->
+      <div class="msg msg-out">
+        <div>1</div>
+        <div class="msg-time">10:52 AM</div>
+      </div>
+
+      <!-- 12. Venue Decor Photo Delivered -->
+      <div class="msg msg-in">
+        <div>
+          <b>VENUE DECOR SYNTHESIS: HERITAGE PALACE FEEL WITH ROYAL MARIGOLD AND LOTUS DECOR</b><br>
+          <img src="/stage.png" alt="Venue Decor" class="venue-img-card" />
+          Architectural courtyard floral arches, floating lotus water mandap, and royal brass lamps.<br><br>
+          <i>Reply <b>'confirm'</b> to lock this aesthetic and receive your digital proposal contract!</i>
+        </div>
+        <div class="msg-time">10:52 AM</div>
+      </div>
+
+      <!-- 13. Confirm Theme -->
+      <div class="msg msg-out">
+        <div>confirm</div>
+        <div class="msg-time">10:53 AM</div>
+      </div>
+
+      <!-- 14. Proposal PDF Delivered -->
+      <div class="msg msg-in">
+        <div>
+          <b>OFFICIAL PROPOSAL &amp; SERVICE AGREEMENT GENERATED</b><br><br>
+          Your bespoke proposal for <b>INQ-0020</b> has been compiled with itemized stage milestones:
+          <div class="pdf-card">
+            <div class="pdf-icon">PDF</div>
+            <div>
+              <div style="font-weight: 700; font-size: 0.88rem;">Rohit_Simran_Royal_Proposal.pdf</div>
+              <div style="font-size: 0.75rem; color: #7f91a4;">2.4 MB &bull; Signed by Royal Curator</div>
+            </div>
+          </div>
+          <br>
+          Please review and send <code>/sign</code> to digitally counter-sign Milestone 1 (30% Advance).
+        </div>
+        <div class="msg-time">10:53 AM</div>
+      </div>
+
+      <!-- 15. /sign -->
+      <div class="msg msg-out">
+        <div>/sign</div>
+        <div class="msg-time">10:54 AM</div>
+      </div>
+
+      <!-- 16. Counter-Signed & Itinerary Request -->
+      <div class="msg msg-in">
+        <div>
+          <b>ROYAL SERVICE CONTRACT OFFICIALLY COUNTER-SIGNED!</b><br><br>
+          &bull; <b>Milestone 1 (30%):</b> ₹75.0 Lakhs Confirmed.<br>
+          &bull; <b>Procurement Protocol:</b> RFPs released to 18 Verified Rajasthan Vendors.<br><br>
+          Please now share your <b>Event Dates and Ceremonial Traditions</b> (e.g. <i>'Nov 15 from 1.45pm to 4.45pm, Grand Sangeet & Reception will take place'</i>).
+        </div>
+        <div class="msg-time">10:54 AM</div>
+      </div>
+
+      <!-- 17. Event Schedule Input -->
+      <div class="msg msg-out">
+        <div>Nov 15 from 1.45pm to 4.45pm, Grand Sangeet & Reception will take place</div>
+        <div class="msg-time">10:55 AM</div>
+      </div>
+
+      <!-- 18. Schedule Locked -->
+      <div class="msg msg-in">
+        <div>
+          <b>MASTER BIG-DAY RUN SHEET COMMITTED & LOCKED!</b><br><br>
+          &bull; <b>Date:</b> November 15, 2026<br>
+          &bull; <b>Event:</b> Grand Sangeet & Reception<br>
+          &bull; <b>Operating Window:</b> 01:45 PM &mdash; 04:45 PM (3.0 Hours)<br>
+          &bull; <b>Command Centre Status:</b> Milestone checkpoints live in KnotCore Dashboard.
+        </div>
+        <div class="msg-time">10:55 AM</div>
+      </div>
+
+    </div>
+
+    <!-- Bottom Input Field -->
+    <div class="input-bar">
+      <input type="text" class="input-field" placeholder="Write a message..." readonly value="confirm" />
+    </div>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer QR Entry — The Royal Knot</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #07090e;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      overflow: hidden;
+    }
+    .poster-card {
+      position: relative;
+      max-width: 92vw;
+      max-height: 90vh;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(212, 175, 55, 0.25);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+    }
+    .poster-img {
+      display: block;
+      max-width: 100%;
+      max-height: 86vh;
+      object-fit: contain;
+    }
+    .badge {
+      position: absolute;
+      bottom: 24px;
+      left: 24px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      padding: 10px 20px;
+      border-radius: 9999px;
+      color: #fef08a;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div class="poster-card">
+    <img src="/poster_1.png" alt="Customer QR Poster" class="poster-img" />
+    <div class="badge">Customer QR Gateway &bull; Redirects to @Royalknot_bot</div>
+  </div>
+</body>
+</html>

@@ -176,8 +176,8 @@ class GeminiLeadExtractor:
         merged = dict(existing)
 
         # 1. Parameter extraction: Clean couple names without sentences or prepositions
-        stop_words = {"in", "at", "on", "this", "our", "the", "my", "a", "an", "udaipur", "jaipur", "jodhpur", "goa", "december", "january", "february", "march"}
-        couple_match = re.search(r'(?:wedding\s+for|affair\s+for|celebration\s+for|couple:?|names:?|for)\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)\s+(?:and|&)\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)', text, re.IGNORECASE)
+        stop_words = {"in", "at", "on", "this", "our", "the", "my", "a", "an", "udaipur", "jaipur", "jodhpur", "goa", "december", "january", "february", "march", "marriage", "planning"}
+        couple_match = re.search(r'(?:marriage\s+(?:planning\s+)?for|wedding\s+for|affair\s+for|celebration\s+for|couple:?|names:?|planning\s+for|for)\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)\s+(?:and|&)\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)', text, re.IGNORECASE)
         if couple_match:
             p1_parts = [w for w in couple_match.group(1).split() if w.lower() not in stop_words]
             p2_parts = [w for w in couple_match.group(2).split() if w.lower() not in stop_words]

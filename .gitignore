@@ -16,7 +16,54 @@ venv/
 *.log
 .odoo_filestore/
 
-# IDE
+# IDE & OS
 .vscode/
 .idea/
 *.swp
+.DS_Store
+Thumbs.db
+
+# Frontend Dependencies & Build
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Media & Recordings (Excluded)
+*.mp4
+*.webm
+*.avi
+*.mov
+*.mkv
+*.wav
+*.mp3
+
+# Subtitle & Video Production Scripts (Excluded)
+*.srt
+*.ass
+video_recording_script.md
+scratch/
+command.txt
+commands.txt
+
+# Exclude All Images by default
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
+*.bmp
+frontend/public/**/*.png
+frontend/public/**/*.jpg
+frontend/public/**/*.jpeg
+frontend/public/**/*.webp
+frontend/src/**/*.png
+frontend/src/**/*.jpg
+frontend/src/**/*.jpeg
+frontend/src/**/*.webp
+
+# Whitelist ONLY allowed posters
+!poster 1.png
+!vendor poster.png
+!frontend/public/poster_1.png
+!frontend/public/vendor_poster.png
