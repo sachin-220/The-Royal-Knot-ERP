@@ -3,8 +3,29 @@ import {
   DollarSign, AlertTriangle, CheckCircle, ShieldAlert, Award, FileText, 
   Search, TrendingUp, Filter, ChevronRight, Sparkles, Send, RefreshCw, 
   Eye, CheckCircle2, Shield, Mail, ArrowRight, X, AlertCircle, Sliders,
-  HelpCircle, UserCheck, Layers, PieChart, BarChart2
+  HelpCircle, UserCheck, Layers, PieChart, BarChart2, Plus, Trash2, Edit2, Database, Lock
 } from 'lucide-react';
+
+export const ALL_18_CATEGORIES = [
+  { code: 'CAT-01', name: 'Venue & Heritage Royalty' },
+  { code: 'CAT-02', name: 'Royal Catering & Banqueting' },
+  { code: 'CAT-03', name: 'Floral Architecture & Production' },
+  { code: 'CAT-04', name: 'Bespoke Thematic Decor & Styling' },
+  { code: 'CAT-05', name: 'Light, Sound & Concert AV' },
+  { code: 'CAT-06', name: 'Celebrity & Folk Entertainment' },
+  { code: 'CAT-07', name: 'Cinematography & Royal Portraiture' },
+  { code: 'CAT-08', name: 'Bridal & Groom Haute Couture/Styling' },
+  { code: 'CAT-09', name: 'Royal Guest Concierge & Fleet' },
+  { code: 'CAT-10', name: 'Fireworks, Pyrotechnics & FX' },
+  { code: 'CAT-11', name: 'Rajasthani Cultural Troupe & Procession' },
+  { code: 'CAT-12', name: 'Invitations, Gifting & Royal Wax Seals' },
+  { code: 'CAT-13', name: 'Mixology & Artisanal Bar Services' },
+  { code: 'CAT-14', name: 'Vintage Car & Elephant/Horse Procession' },
+  { code: 'CAT-15', name: 'Security, Bouncers & Protocol Officers' },
+  { code: 'CAT-16', name: 'Health, Sanitation & Medical Station' },
+  { code: 'CAT-17', name: 'Permits, Licensing & Royalty Taxes' },
+  { code: 'CAT-18', name: 'Emergency Contingency Reserve' }
+];
 
 export default function BudgetVendorView({ weddingId }) {
   const [budgetData, setBudgetData] = useState(null);
@@ -28,6 +49,7 @@ export default function BudgetVendorView({ weddingId }) {
 
   // Chart point click
   const [selectedChartPoint, setSelectedChartPoint] = useState(null);
+  const [benchmarks, setBenchmarks] = useState([]);
 
   // OCR Simulator state
   const [ocrInputText, setOcrInputText] = useState('');
@@ -36,17 +58,31 @@ export default function BudgetVendorView({ weddingId }) {
   const [ocrPendingSession, setOcrPendingSession] = useState(null);
   const [ocrProcessing, setOcrProcessing] = useState(false);
 
+  // Blind Bidding Simulation state
+  const [blindBidModalOpen, setBlindBidModalOpen] = useState(false);
+  const [blindBidForm, setBlindBidForm] = useState({
+    category_code: 'CAT-02',
+    vendor_name: 'Shahi Rajputana Caterers',
+    quoted_price: 5100000,
+    item_description: 'Confidential RFP: 524 plates royal buffet with ML buffer'
+  });
+  const [blindBidResult, setBlindBidResult] = useState(null);
+  const [submittingBid, setSubmittingBid] = useState(false);
+
   const fetchBudgetAndQuotes = async () => {
     try {
       setLoading(true);
-      const [resBudget, resQuotes] = await Promise.all([
+      const [resBudget, resQuotes, resBench] = await Promise.all([
         fetch(`http://127.0.0.1:5000/api/weddings/${weddingId}/budget`),
-        fetch(`http://127.0.0.1:5000/api/weddings/${weddingId}/quotes`)
+        fetch(`http://127.0.0.1:5000/api/weddings/${weddingId}/quotes`),
+        fetch('http://127.0.0.1:5000/api/analytics/budget-benchmarks')
       ]);
       const dataB = await resBudget.json();
       const dataQ = await resQuotes.json();
+      const dataBench = await resBench.json();
       setBudgetData(dataB);
       setQuotes(dataQ);
+      setBenchmarks(dataBench.benchmarks || []);
     } catch (err) {
       console.error("Failed to load budget and quotes:", err);
     } finally {
@@ -160,6 +196,34 @@ export default function BudgetVendorView({ weddingId }) {
     }
   };
 
+  const handleSubmitBlindBid = async (e) => {
+    e.preventDefault();
+    try {
+      setSubmittingBid(true);
+      const res = await fetch('http://127.0.0.1:5000/api/bot/submit-blind-bid', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          wedding_id: weddingId,
+          ...blindBidForm
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setBlindBidResult(data);
+        fetchBudgetAndQuotes();
+        setTimeout(() => {
+          setBlindBidModalOpen(false);
+          setBlindBidResult(null);
+        }, 3000);
+      }
+    } catch (err) {
+      console.error("Submit blind bid error:", err);
+    } finally {
+      setSubmittingBid(false);
+    }
+  };
+
   const filteredQuotes = selectedCategory === 'ALL' 
     ? quotes 
     : quotes.filter(q => q.category_code === selectedCategory);
@@ -168,55 +232,105 @@ export default function BudgetVendorView({ weddingId }) {
   const totalCommitted = budgetData?.summary?.total_committed || 24900000;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
-      {/* TOP 4 CLEAN METRIC CARDS */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
-        <div className="saas-card" style={{ padding: '18px 20px' }}>
-          <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, letterSpacing: '0.04em', marginBottom: '6px' }}>
-            TOTAL ALLOCATED BUDGET
+      {/* StockSense Breadcrumbs, Serif Heading, Subtitle & Action Buttons */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '16px' }}>
+        <div>
+          <div style={{ fontSize: '0.78rem', color: '#71717a', marginBottom: '6px', fontWeight: 500 }}>
+            <span>KnotCore</span>
+            <span style={{ margin: '0 6px', color: '#a1a1aa' }}>/</span>
+            <span>Procurement</span>
+            <span style={{ margin: '0 6px', color: '#a1a1aa' }}>/</span>
+            <span style={{ color: '#18181b', fontWeight: 600 }}>Vendor Quotations</span>
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#0f172a', marginBottom: '2px' }}>
+          <h1 className="font-serif" style={{ fontSize: '2.2rem', fontWeight: 600, color: '#18181b', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.15 }}>
+            Vendor Quotations & Comparison Grid
+          </h1>
+          <p style={{ fontSize: '0.84rem', color: '#71717a', margin: '4px 0 0', fontWeight: 400 }}>
+            Side-by-side proposal analysis, 5-factor WCI suitability scoring, and OCR bid ingestion.
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            onClick={() => setBlindBidModalOpen(true)}
+            className="btn-dark-pill"
+            style={{ fontSize: '0.82rem', padding: '8px 16px' }}
+          >
+            <Plus size={14} />
+            <span>+ Submit Blind Bid</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 4 StockSense KPI Cards with Yellow Icon Boxes */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+        <div className="stocksense-card" style={{ padding: '18px 20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <DollarSign size={16} />
+            </div>
+            <span style={{ fontSize: '0.74rem', color: '#71717a', fontWeight: 500 }}>
+              Allocated Budget
+            </span>
+          </div>
+          <div style={{ fontSize: '1.75rem', fontWeight: 600, color: '#18181b', marginTop: '12px', letterSpacing: '-0.02em' }}>
             ₹{(totalAllocated / 10000000).toFixed(2)} Cr
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600 }}>
-            18 Categories Balanced (100%)
+          <div style={{ fontSize: '0.74rem', color: '#16a34a', fontWeight: 500, marginTop: '4px' }}>
+            18 categories balanced (100%)
           </div>
         </div>
 
-        <div className="saas-card" style={{ padding: '18px 20px' }}>
-          <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, letterSpacing: '0.04em', marginBottom: '6px' }}>
-            COMMITTED CONTRACTS
+        <div className="stocksense-card" style={{ padding: '18px 20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Layers size={16} />
+            </div>
+            <span style={{ fontSize: '0.74rem', color: '#71717a', fontWeight: 500 }}>
+              Committed Contracts
+            </span>
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#4f46e5', marginBottom: '2px' }}>
+          <div style={{ fontSize: '1.75rem', fontWeight: 600, color: '#18181b', marginTop: '12px', letterSpacing: '-0.02em' }}>
             ₹{(totalCommitted / 10000000).toFixed(2)} Cr
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-            Signed Purchase Orders
+          <div style={{ fontSize: '0.74rem', color: '#71717a', fontWeight: 500, marginTop: '4px' }}>
+            Signed purchase orders
           </div>
         </div>
 
-        <div className="saas-card" style={{ padding: '18px 20px' }}>
-          <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, letterSpacing: '0.04em', marginBottom: '6px' }}>
-            FINANCIAL LEAKAGE BLOCKED
+        <div className="stocksense-card" style={{ padding: '18px 20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <ShieldAlert size={16} />
+            </div>
+            <span style={{ fontSize: '0.74rem', color: '#71717a', fontWeight: 500 }}>
+              Leakage Blocked
+            </span>
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: 700, color: '#0ea5e9', marginBottom: '2px' }}>
-            ₹18.2 Lakhs
+          <div style={{ fontSize: '1.75rem', fontWeight: 600, color: '#18181b', marginTop: '12px', letterSpacing: '-0.02em' }}>
+            ₹18.2 L
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-            Via +2-Sigma Outlier Flags
+          <div style={{ fontSize: '0.74rem', color: '#16a34a', fontWeight: 500, marginTop: '4px' }}>
+            Via +2-sigma outlier caps
           </div>
         </div>
 
-        <div className="saas-card" style={{ padding: '18px 20px' }}>
-          <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, letterSpacing: '0.04em', marginBottom: '6px' }}>
-            PROCUREMENT PROTOCOL
+        <div className="stocksense-card" style={{ padding: '18px 20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Lock size={16} />
+            </div>
+            <span style={{ fontSize: '0.74rem', color: '#71717a', fontWeight: 500 }}>
+              Bidding Protocol
+            </span>
           </div>
-          <div style={{ fontSize: '1.35rem', fontWeight: 700, color: '#0f172a', marginBottom: '2px' }}>
+          <div style={{ fontSize: '1.45rem', fontWeight: 600, color: '#18181b', marginTop: '14px' }}>
             One-Way Mirror
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600 }}>
-            Blind Multi-Vendor Bidding
+          <div style={{ fontSize: '0.74rem', color: '#16a34a', fontWeight: 500, marginTop: '4px' }}>
+            Blind multi-vendor RFP
           </div>
         </div>
       </div>
@@ -226,16 +340,16 @@ export default function BudgetVendorView({ weddingId }) {
         <div style={{
           padding: '12px 18px',
           background: '#ecfdf5',
-          border: '1px solid #a7f3d0',
-          borderRadius: '10px',
+          border: '1px solid #bbf7d0',
+          borderRadius: '8px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          color: '#065f46',
+          color: '#15803d',
           fontSize: '0.84rem'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <CheckCircle2 size={16} color="#059669" />
+            <CheckCircle2 size={16} color="#16a34a" />
             <span>
               <strong>Purchase Order Issued:</strong> <code>{awardSuccess.purchase_order}</code>. Competing vendor bids auto-closed.
             </span>
@@ -243,41 +357,43 @@ export default function BudgetVendorView({ weddingId }) {
           <button 
             onClick={() => setAwardModalData(awardSuccess)}
             className="btn-outline" 
-            style={{ fontSize: '0.76rem', padding: '5px 12px', background: '#ffffff' }}
+            style={{ fontSize: '0.76rem', padding: '5px 12px' }}
           >
             View Decline Email Audit
           </button>
         </div>
       )}
 
-      {/* CLEAN, FOCUSED 5-TAB NAVIGATION BAR */}
-      <div style={{ display: 'flex', gap: '6px', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px', flexWrap: 'wrap' }}>
+      {/* StockSense Pill Sub-Navigation Bar */}
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
         {[
           { id: 'grid', label: 'All Vendor Quotations' },
-          { id: 'caterers', label: '3-Caterer Line-by-Line (60-Plate Buffer)' },
+          { id: 'caterers', label: '3-Caterer Line-by-Line' },
           { id: 'anomaly_chart', label: 'Price Anomaly Chart' },
-          { id: 'alternatives', label: 'Alternative Recommender (res.partner)' },
+          { id: 'alternatives', label: 'Alternative Recommender' },
           { id: 'ocr', label: 'OCR Ingestion Engine' }
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveSubTab(tab.id)}
-            style={{
-              padding: '7px 14px',
-              borderRadius: '8px',
-              border: activeSubTab === tab.id ? '1px solid #4f46e5' : '1px solid #e2e8f0',
-              background: activeSubTab === tab.id ? '#4f46e5' : '#ffffff',
-              color: activeSubTab === tab.id ? '#ffffff' : '#64748b',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
+        ].map(tab => {
+          const active = activeSubTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveSubTab(tab.id)}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '8px',
+                border: active ? '1px solid #18181b' : '1px solid #e7e7e4',
+                background: active ? '#18181b' : '#ffffff',
+                color: active ? '#ffffff' : '#71717a',
+                fontSize: '0.8rem',
+                fontWeight: active ? 600 : 500,
+                cursor: 'pointer',
+                transition: 'all 0.12s ease'
+              }}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* =========================================================================
@@ -483,6 +599,29 @@ export default function BudgetVendorView({ weddingId }) {
             </div>
           </div>
 
+          {/* ONE-WAY MIRROR BLIND BIDDING STATUS BANNER */}
+          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="badge badge-emerald" style={{ fontSize: '0.68rem' }}>One-Way Mirror Active</span>
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0f172a' }}>
+                  Blind Multi-Vendor Procurement Protocol
+                </span>
+              </div>
+              <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '2px' }}>
+                All quotations are submitted confidentially via Bot. No competing vendor can view another's bid or identity. All bids flow directly to KnotCore.
+              </div>
+            </div>
+            <button
+              onClick={() => setBlindBidModalOpen(true)}
+              className="btn-outline"
+              style={{ fontSize: '0.74rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '5px', background: '#ffffff' }}
+            >
+              <Send size={12} />
+              <span>Submit Blind Bid via Bot</span>
+            </button>
+          </div>
+
           <div style={{ overflowX: 'auto' }}>
             <table>
               <thead>
@@ -615,11 +754,11 @@ export default function BudgetVendorView({ weddingId }) {
                 );
               })}
 
-              {[
+              {(benchmarks.length > 0 ? benchmarks : [
                 { cat: "CAT-02", name: "Royal Catering", x: 220, median: 50, q1: 46, q3: 54, sig2: 58 },
                 { cat: "CAT-03", name: "Floral Decor", x: 480, median: 30, q1: 27.5, q3: 32.5, sig2: 35 },
                 { cat: "CAT-05", name: "Sound & DJ AV", x: 720, median: 15, q1: 13.8, q3: 16.2, sig2: 17.4 }
-              ].map((c) => {
+              ]).map((c) => {
                 const yMed = 300 - (c.median / 70) * 260;
                 const yQ1 = 300 - (c.q1 / 70) * 260;
                 const yQ3 = 300 - (c.q3 / 70) * 260;
@@ -640,10 +779,12 @@ export default function BudgetVendorView({ weddingId }) {
               })}
 
               {quotes.map((q) => {
-                let colX = 220;
-                let sig2L = 58;
-                if (q.category_code === 'CAT-03') { colX = 480; sig2L = 35; }
-                else if (q.category_code === 'CAT-05') { colX = 720; sig2L = 17.4; }
+                const bench = benchmarks.find(b => b.cat === q.category_code) || {
+                  x: q.category_code === 'CAT-03' ? 480 : (q.category_code === 'CAT-05' ? 720 : 220),
+                  sig2: q.category_code === 'CAT-03' ? 35 : (q.category_code === 'CAT-05' ? 17.4 : 58)
+                };
+                const colX = bench.x;
+                const sig2L = bench.sig2;
 
                 const jitter = (q.id % 5 - 2) * 16;
                 const priceL = q.quoted_price / 100000;
@@ -1023,24 +1164,59 @@ export default function BudgetVendorView({ weddingId }) {
               <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>
                 Auto-Closed Competing Bids:
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {awardModalData.rejected_bids?.map((rb, idx) => (
-                  <div key={idx} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '6px 10px', display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem' }}>
-                    <span><strong>{rb.vendor_name}</strong> (₹{(rb.quoted_price / 100000).toFixed(2)}L)</span>
-                    <span className="badge badge-amber">Auto-Closed</span>
+                  <div key={idx} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.74rem' }}>
+                    <div>
+                      <strong>{rb.vendor_name}</strong>
+                      <div style={{ color: '#64748b', fontSize: '0.7rem' }}>
+                        Quoted: ₹{Number(rb.quoted_price || 0).toLocaleString('en-IN')} | Ref: QTE-{rb.id}
+                      </div>
+                    </div>
+                    <span className="badge badge-amber" style={{ textTransform: 'uppercase', fontSize: '0.68rem' }}>
+                      Auto-Closed & Declined
+                    </span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div>
-              <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>
-                Dispatched Decline Email Sample:
+            <div style={{ marginBottom: '14px' }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0f172a', marginBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>Automated Polite Decline Email Dispatch:</span>
+                <span className="badge badge-emerald" style={{ fontSize: '0.68rem' }}>
+                  Dispatched via Gmail SMTP
+                </span>
               </div>
+              
+              {/* Dynamic Recipients from res_partner / CSV */}
+              <div style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '10px 12px', marginBottom: '8px' }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#475569', marginBottom: '6px' }}>
+                  DISPATCHED TO DYNAMIC RECIPIENTS (FROM RES_PARTNER / CSV):
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {awardModalData.decline_emails?.map((de, dIdx) => (
+                    <div key={dIdx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.74rem' }}>
+                      <div>
+                        <strong>{de.vendor_name}:</strong> <span style={{ fontFamily: 'monospace', color: '#0f172a' }}>{de.recipient_email}</span>
+                      </div>
+                      <span className="badge badge-emerald" style={{ fontSize: '0.66rem' }}>
+                        {de.recipients?.[0]?.status || 'Delivered'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Email Content Preview */}
               {awardModalData.decline_emails?.[0] && (
-                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px', fontSize: '0.74rem' }}>
-                  <div style={{ color: '#4f46e5', fontWeight: 600 }}>To: {awardModalData.decline_emails[0].recipient_email}</div>
-                  <div style={{ color: '#475569', marginTop: '4px', whiteSpace: 'pre-line' }}>{awardModalData.decline_emails[0].body}</div>
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px 12px', fontSize: '0.72rem' }}>
+                  <div style={{ color: '#4338ca', fontWeight: 600, marginBottom: '4px' }}>
+                    Subject: {awardModalData.decline_emails[0].subject}
+                  </div>
+                  <div style={{ color: '#334155', maxHeight: '140px', overflowY: 'auto', whiteSpace: 'pre-line', lineHeight: '1.4', background: '#ffffff', padding: '8px', borderRadius: '4px', border: '1px solid #e2e8f0', fontFamily: 'sans-serif' }}>
+                    {awardModalData.decline_emails[0].body}
+                  </div>
                 </div>
               )}
             </div>
@@ -1050,6 +1226,120 @@ export default function BudgetVendorView({ weddingId }) {
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* BLIND BIDDING SIMULATION MODAL */}
+      {blindBidModalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 120, padding: '20px' }}>
+          <div style={{ background: '#ffffff', borderRadius: '14px', maxWidth: '520px', width: '100%', padding: '22px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: '#0f172a' }}>
+                  Submit Confidential RFP Bid (One-Way Mirror)
+                </h3>
+                <p style={{ margin: '2px 0 0', fontSize: '0.74rem', color: '#64748b' }}>
+                  Simulates vendor submission via Bot. Competing vendors cannot view this bid.
+                </p>
+              </div>
+              <button onClick={() => setBlindBidModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            {blindBidResult ? (
+              <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '8px', padding: '14px', marginBottom: '14px' }}>
+                <div style={{ color: '#065f46', fontWeight: 700, fontSize: '0.84rem', marginBottom: '4px' }}>
+                  Confidential Bid Ingested!
+                </div>
+                <div style={{ fontSize: '0.76rem', color: '#047857' }}>
+                  {blindBidResult.message}
+                </div>
+                <div style={{ marginTop: '8px', fontSize: '0.72rem', color: '#0f172a', background: '#ffffff', padding: '8px', borderRadius: '6px', border: '1px solid #a7f3d0' }}>
+                  Quoted: ₹{Number(blindBidResult.quote?.quoted_price || 0).toLocaleString('en-IN')} | WCI: {blindBidResult.quote?.wci_score}/100
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmitBlindBid}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
+                  <div>
+                    <label style={{ fontSize: '0.74rem', fontWeight: 600, color: '#334155', display: 'block', marginBottom: '3px' }}>
+                      RFP CATEGORY
+                    </label>
+                    <select
+                      value={blindBidForm.category_code}
+                      onChange={e => setBlindBidForm({ ...blindBidForm, category_code: e.target.value })}
+                      style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '0.8rem', fontFamily: 'inherit' }}
+                    >
+                      {ALL_18_CATEGORIES.map(c => (
+                        <option key={c.code} value={c.code}>{c.code}: {c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.74rem', fontWeight: 600, color: '#334155', display: 'block', marginBottom: '3px' }}>
+                      BIDDING VENDOR NAME
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={blindBidForm.vendor_name}
+                      onChange={e => setBlindBidForm({ ...blindBidForm, vendor_name: e.target.value })}
+                      placeholder="e.g. Shahi Rajputana Caterers"
+                      style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '0.8rem', fontFamily: 'inherit' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.74rem', fontWeight: 600, color: '#334155', display: 'block', marginBottom: '3px' }}>
+                      QUOTED TOTAL AMOUNT (INR)
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      step="50000"
+                      value={blindBidForm.quoted_price}
+                      onChange={e => setBlindBidForm({ ...blindBidForm, quoted_price: parseFloat(e.target.value) || 0 })}
+                      style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '0.8rem', fontFamily: 'inherit' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.74rem', fontWeight: 600, color: '#334155', display: 'block', marginBottom: '3px' }}>
+                      SCOPE DESCRIPTION
+                    </label>
+                    <input
+                      type="text"
+                      value={blindBidForm.item_description}
+                      onChange={e => setBlindBidForm({ ...blindBidForm, item_description: e.target.value })}
+                      placeholder="e.g. 524 plates royal buffet with ML buffer"
+                      style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '0.8rem', fontFamily: 'inherit' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #e2e8f0', paddingTop: '12px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setBlindBidModalOpen(false)}
+                    className="btn-outline"
+                    style={{ fontSize: '0.78rem', padding: '6px 14px' }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingBid}
+                    className="btn-primary"
+                    style={{ fontSize: '0.78rem', padding: '6px 16px' }}
+                  >
+                    {submittingBid ? 'Transmitting...' : 'Ingest Confidential Bid'}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

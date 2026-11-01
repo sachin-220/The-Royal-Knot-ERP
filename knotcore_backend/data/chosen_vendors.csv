@@ -1,0 +1,5 @@
+id,name,category_code,category_name,email,phone,city,typical_price_inr,status,inquiry_ref,purchase_order_ref,call_time,checkin_status
+1,Rambagh Palace Heritage Estate,CAT-01,Venue & Heritage Royalty,royalty@rambaghpalace.in,+91 98290 11001,Udaipur,5500000.0,AWARDED,INQ-0011,PO-2026-CAT01-1101,10:00 AM,PENDING
+2,Shahi Mewar Gourmet Feasts,CAT-02,Royal Catering & Banqueting,sachinpriya1503@gmail.com,+91 98290 12002,Udaipur,5100000.0,AWARDED,INQ-0011,PO-2026-CAT02-3326,10:30 AM,PENDING
+6,Rajputana Royal Mandap Designers,CAT-03,Floral Architecture & Production,decor@rajputanamandap.in,+91 98290 14001,Jaipur,2900000.0,AWARDED,INQ-0011,PO-2026-CAT03-2222,11:00 AM,CHECKED_IN
+9,Desert Sonic Concert AV & Sound,CAT-05,Light Sound & Concert AV,sound@desertsonic.in,+91 98290 15001,Jaipur,1480000.0,AWARDED,INQ-0011,PO-2026-CAT05-D207,11:30 AM,PENDING
