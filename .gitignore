@@ -38,13 +38,19 @@ frontend/.vite/
 *.wav
 *.mp3
 
-# Subtitle & Video Production Scripts (Excluded)
+# Subtitle, Video & Audio Production Scripts (Excluded)
 *.srt
 *.ass
 video_recording_script.md
 scratch/
 command.txt
 commands.txt
+title_slide.html
+frontend/public/title_slide.html
+frontend/public/poster_1_slide.html
+frontend/public/vendor_poster_slide.html
+frontend/public/telegram_customer_simulation.html
+frontend/public/telegram_vendor_simulation.html
 
 # Exclude All Images by default
 *.png
