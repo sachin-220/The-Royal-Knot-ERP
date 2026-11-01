@@ -134,12 +134,42 @@ class KnotCoreBotEngine:
             print(f"[BotEngine DB Error] {e}")
             return None
 
+    def _sanitize_telegram_html(self, text: str) -> str:
+        """Sanitizes HTML for strict Telegram Bot API compliance."""
+        if not text:
+            return ""
+        # Convert break tags and paragraphs to newlines
+        s = re.sub(r'<br\s*/?>', '\n', text, flags=re.IGNORECASE)
+        s = re.sub(r'</?p\s*>', '\n', s, flags=re.IGNORECASE)
+        # Convert list items to bullet points
+        s = re.sub(r'<li\s*>', '• ', s, flags=re.IGNORECASE)
+        s = re.sub(r'</li\s*>', '\n', s, flags=re.IGNORECASE)
+        # Strip container list / div tags
+        s = re.sub(r'</?(?:ul|ol|div)\s*>', '', s, flags=re.IGNORECASE)
+        # Convert header tags to bold
+        s = re.sub(r'<h[1-6]\s*>(.*?)</h[1-6]\s*>', r'<b>\1</b>\n', s, flags=re.IGNORECASE)
+        # Strip any tags not in Telegram's officially supported list
+        allowed = {'b', 'strong', 'i', 'em', 'u', 'ins', 's', 'strike', 'del', 'code', 'pre', 'blockquote', 'a', 'tg-spoiler'}
+        def replace_tag(match):
+            full_tag = match.group(0)
+            tag_name = match.group(1).lower().lstrip('/')
+            if tag_name in allowed:
+                return full_tag
+            return ''
+        s = re.sub(r'<(/?[a-zA-Z0-9_-]+)(?:\s+[^>]*)?>', replace_tag, s)
+        # Fix loose & that are not valid entities
+        s = re.sub(r'&(?!(?:amp|lt|gt|quot|#\d+|#x[0-9a-fA-F]+);)', '&amp;', s)
+        # Normalize excessive consecutive newlines
+        s = re.sub(r'\n{3,}', '\n\n', s)
+        return s.strip()
+
     def send_message(self, chat_id: int, text: str, parse_mode: str = "HTML", reply_markup: Optional[Dict] = None):
-        """Dispatches an outbound message to a Telegram user."""
+        """Dispatches an outbound message to a Telegram user with automatic HTML sanitization and plaintext failover."""
+        clean_text = self._sanitize_telegram_html(text) if parse_mode == "HTML" else text
         url = f"{self.api_url}/sendMessage"
         payload = {
             "chat_id": chat_id,
-            "text": text,
+            "text": clean_text,
             "parse_mode": parse_mode,
         }
         if reply_markup:
@@ -153,26 +183,51 @@ class KnotCoreBotEngine:
             )
             with urllib.request.urlopen(req, timeout=12) as resp:
                 return json.loads(resp.read().decode('utf-8'))
+        except urllib.error.HTTPError as he:
+            err_body = he.read().decode('utf-8', errors='ignore')
+            print(f"[BotEngine] Telegram API error ({he.code}) sending message to {chat_id}: {err_body}")
+            # If HTML parsing failed, retry as plain text so the message is NEVER dropped!
+            if parse_mode == "HTML":
+                try:
+                    plain_text = re.sub(r'<[^>]+>', '', text).strip()
+                    fallback_payload = {
+                        "chat_id": chat_id,
+                        "text": plain_text,
+                    }
+                    if reply_markup:
+                        fallback_payload["reply_markup"] = reply_markup
+                    fallback_req = urllib.request.Request(
+                        url,
+                        data=json.dumps(fallback_payload).encode('utf-8'),
+                        headers={'Content-Type': 'application/json'}
+                    )
+                    with urllib.request.urlopen(fallback_req, timeout=12) as fb_resp:
+                        print(f"[BotEngine] Fallback plain-text delivered successfully to {chat_id}")
+                        return json.loads(fb_resp.read().decode('utf-8'))
+                except Exception as fb_err:
+                    print(f"[BotEngine] Plain-text fallback failed for {chat_id}: {fb_err}")
+            return None
         except Exception as e:
             print(f"[BotEngine] Error sending message to {chat_id}: {e}")
             return None
 
     def send_photo(self, chat_id: int, photo_path_or_url: str, caption: str = "", parse_mode: str = "HTML") -> Optional[Dict]:
-        """Dispatches a photo to a Telegram user (multipart upload for local files, JSON for URLs)."""
+        """Dispatches a photo to a Telegram user with sanitized caption."""
         if self.token.startswith("TEST"):
             return {"ok": True, "result": {"message_id": 999}}
 
+        clean_caption = self._sanitize_telegram_html(caption) if parse_mode == "HTML" else caption
         url = f"{self.api_url}/sendPhoto"
         try:
             import requests
             if os.path.isfile(photo_path_or_url):
                 with open(photo_path_or_url, "rb") as pf:
                     files = {"photo": pf}
-                    data = {"chat_id": chat_id, "caption": caption, "parse_mode": parse_mode}
+                    data = {"chat_id": chat_id, "caption": clean_caption, "parse_mode": parse_mode}
                     resp = requests.post(url, data=data, files=files, timeout=25)
                     return resp.json()
             else:
-                data = {"chat_id": chat_id, "photo": photo_path_or_url, "caption": caption, "parse_mode": parse_mode}
+                data = {"chat_id": chat_id, "photo": photo_path_or_url, "caption": clean_caption, "parse_mode": parse_mode}
                 resp = requests.post(url, json=data, timeout=20)
                 return resp.json()
         except Exception as e:
@@ -180,21 +235,22 @@ class KnotCoreBotEngine:
             return None
 
     def send_document(self, chat_id: int, doc_path_or_url: str, caption: str = "", parse_mode: str = "HTML") -> Optional[Dict]:
-        """Dispatches a PDF or document file to a Telegram user."""
+        """Dispatches a PDF or document file to a Telegram user with sanitized caption."""
         if self.token.startswith("TEST"):
             return {"ok": True, "result": {"message_id": 999}}
 
+        clean_caption = self._sanitize_telegram_html(caption) if parse_mode == "HTML" else caption
         url = f"{self.api_url}/sendDocument"
         try:
             import requests
             if os.path.isfile(doc_path_or_url):
                 with open(doc_path_or_url, "rb") as df:
                     files = {"document": (os.path.basename(doc_path_or_url), df)}
-                    data = {"chat_id": chat_id, "caption": caption, "parse_mode": parse_mode}
+                    data = {"chat_id": chat_id, "caption": clean_caption, "parse_mode": parse_mode}
                     resp = requests.post(url, data=data, files=files, timeout=30)
                     return resp.json()
             else:
-                data = {"chat_id": chat_id, "document": doc_path_or_url, "caption": caption, "parse_mode": parse_mode}
+                data = {"chat_id": chat_id, "document": doc_path_or_url, "caption": clean_caption, "parse_mode": parse_mode}
                 resp = requests.post(url, json=data, timeout=30)
                 return resp.json()
         except Exception as e:
@@ -552,12 +608,7 @@ class KnotCoreBotEngine:
             return
 
         # 5. Theme Selection & Venue Decor Image Generation (Place Only)
-        if session.get("state") == "awaiting_theme_selection" or (
-            session.get("role") == "public" and (
-                (text.strip().isdigit() and 1 <= int(text.strip()) <= 28)
-                or any(k in text.lower() for k in ["theme", "stage", "beach", "mandap", "lotus", "marigold", "palace", "glasshouse", "rose", "temple", "dune", "decor", "ocean", "courtyard"])
-            )
-        ):
+        if session.get("state") == "awaiting_theme_selection":
             self._handle_theme_selection(chat_id, text, session)
             return
 
@@ -975,7 +1026,10 @@ class KnotCoreBotEngine:
 
             dest_str = (data.get('destination') or 'Udaipur').capitalize()
             span_str = "Partial Royal Celebration (1 Day / Half-Day based on timing)" if is_partial else f"{data.get('duration_days', 3)} Days"
+            gemini_intro = (result.get("reply") or "").strip()
+            intro_prefix = f"{gemini_intro}\n\n" if gemini_intro else ""
             confirm_msg = (
+                f"{intro_prefix}"
                 "<b>YOUR ROYAL ENQUIRY IS OFFICIALLY REGISTERED!</b>\n\n"
                 f"• <b>Inquiry Ref:</b> <code>{inq_ref}</code>\n"
                 f"• <b>Couple:</b> {data.get('couple_names', sender_name)}\n"
@@ -3013,10 +3067,42 @@ class KnotCoreBotEngine:
         )
 
     def _handle_client_message(self, chat_id: int, text: str, session: Dict[str, Any]):
-        if "/sign" in text.lower() or "sign" in text.lower():
+        t_low = text.lower()
+        # If client is asking to plan or register a new wedding or start an enquiry
+        if any(w in t_low for w in ["new wedding", "plan wedding", "new inquiry", "new enquiry", "register wedding", "another wedding", "wedding for", "start over", "destination wedding", "in jaipur", "in udaipur"]) or "/start" in t_low or "/reset" in t_low:
+            session["role"] = "public"
+            session["interview_step"] = 1
+            session["enquiry_data"] = {
+                "couple_names": None,
+                "destination": None,
+                "duration_days": None,
+                "guest_count": None,
+                "budget_inr": None,
+                "wedding_theme": None,
+                "preferred_dates": None,
+                "is_partial": False
+            }
+            session["signed"] = False
+            session["schedule_confirmed"] = False
+            session["state"] = None
+            session["step"] = None
+            session["mode"] = None
+            session["inquiry_id"] = None
+            session["inquiry_ref"] = None
+            session["is_new_intake"] = True
+            sender_name = session.get("name", "Valued Guest")
+            self.send_message(
+                chat_id,
+                f"<b>Welcome back to The Royal Knot, {sender_name}!</b>\n\n"
+                "Let us begin crafting your new royal wedding celebration."
+            )
+            self._handle_public_enquiry(chat_id, text, sender_name, session)
+            return
+
+        if "/sign" in t_low or "sign" in t_low:
             self._handle_client_digital_signing(chat_id, session)
             return
-        if "/payments" in text.lower():
+        if "/payments" in t_low:
             self.send_message(chat_id, " <b>PAYMENTS:</b> Milestone 1 (30%): ₹90.0L [PAID]. Milestone 2 (40%): ₹1.20 Cr [Due in 18d].")
             return
         copilot = GeminiLeadExtractor.generate_role_copilot_reply("client", text, self.client_context)

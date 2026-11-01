@@ -19,10 +19,13 @@ class GeminiLeadExtractor:
     failover (gemini-3.5-flash, gemini-flash-latest, gemini-2.5-flash-lite)
     and an intelligent offline dialog fallback.
     """
-    CANDIDATE_MODELS = ["gemini-2.5-flash", "gemini-flash-latest", "gemini-flash-lite-latest"]
+    CANDIDATE_MODELS = ["gemini-flash-lite-latest", "gemini-3-flash-preview"]
 
     @classmethod
     def _get_api_key(cls) -> str:
+        from dotenv import load_dotenv
+        env_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".env")
+        load_dotenv(dotenv_path=env_file, override=True)
         return os.getenv('GEMINI_API_KEY', '').strip()
 
     @classmethod
@@ -115,7 +118,7 @@ class GeminiLeadExtractor:
             "   - If not completed, ask for the next step clearly indicating '<b>Step X of 4</b>'.\n"
             "   - If all 4 steps are complete, present a magnificent Royal Enquiry Summary with ML buffer preview (+17%) and confirm submission to the KnotCore Executive Dashboard.\n\n"
             "Return JSON with keys:\n"
-            "- 'reply': string (HTML formatted with <b>, <i>, <ul>, <li>)\n"
+            "- 'reply': string (Telegram HTML formatted using ONLY <b>, <i>, <code>. Do NOT use <ul>, <ol>, <li>, <p>, or <br>. Use bullet points like • and clean newlines \\n)\n"
             "- 'extracted': object with couple_names, destination, duration_days, guest_count, budget_inr, wedding_theme, preferred_dates, is_partial\n"
             "- 'next_step': integer (1, 2, 3, 4, or 5 if completed)\n"
             "- 'is_completed': boolean (true if destination, guest_count, and budget_inr are present)"
@@ -132,15 +135,26 @@ class GeminiLeadExtractor:
                     if val is not None and val != "" and val != "null":
                         merged[k] = val
 
-                next_step = data.get("next_step", current_step)
-                is_completed = bool(data.get("is_completed", False)) or (
-                    merged.get("destination") and merged.get("guest_count") and merged.get("budget_inr")
+                # Deterministic next_step calculation based on collected fields
+                if not merged.get("destination") or not merged.get("couple_names"):
+                    calc_step = 1
+                elif not (merged.get("duration_days") or merged.get("is_partial")):
+                    calc_step = 2
+                elif not merged.get("guest_count"):
+                    calc_step = 3
+                elif not merged.get("budget_inr"):
+                    calc_step = 4
+                else:
+                    calc_step = 5
+
+                is_completed = (calc_step == 5) or bool(data.get("is_completed", False)) or (
+                    bool(merged.get("destination")) and bool(merged.get("guest_count")) and bool(merged.get("budget_inr"))
                 )
 
                 return {
                     "reply": data.get("reply", ""),
                     "enquiry_data": merged,
-                    "next_step": 5 if is_completed else next_step,
+                    "next_step": 5 if is_completed else calc_step,
                     "is_completed": is_completed
                 }
             except Exception as e:

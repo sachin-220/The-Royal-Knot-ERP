@@ -71,7 +71,7 @@ class QuotationOCREngine:
         import base64
         import urllib.request
         from dotenv import load_dotenv
-        load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
+        load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"), override=True)
         api_key = os.getenv("GEMINI_API_KEY", "").strip()
         if not api_key:
             return ""
