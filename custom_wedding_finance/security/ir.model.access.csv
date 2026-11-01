@@ -1,0 +1,15 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_milestone_manager,knotcore.client.milestone.manager,model_knotcore_client_milestone,custom_wedding_core.group_wedding_founder,1,1,1,1
+access_milestone_planner,knotcore.client.milestone.planner,model_knotcore_client_milestone,custom_wedding_core.group_wedding_planner,1,1,1,0
+access_milestone_user,knotcore.client.milestone.user,model_knotcore_client_milestone,base.group_user,1,0,0,0
+access_guest_pass_manager,knotcore.guest.pass.manager,model_knotcore_guest_pass,custom_wedding_core.group_wedding_founder,1,1,1,1
+access_guest_pass_planner,knotcore.guest.pass.planner,model_knotcore_guest_pass,custom_wedding_core.group_wedding_planner,1,1,1,1
+access_guest_pass_user,knotcore.guest.pass.user,model_knotcore_guest_pass,base.group_user,1,1,1,0
+access_variation_manager,knotcore.wedding.variation.manager,model_knotcore_wedding_variation,custom_wedding_core.group_wedding_founder,1,1,1,1
+access_variation_planner,knotcore.wedding.variation.planner,model_knotcore_wedding_variation,custom_wedding_core.group_wedding_planner,1,1,1,1
+access_variation_user,knotcore.wedding.variation.user,model_knotcore_wedding_variation,base.group_user,1,0,0,0
+access_settlement_manager,knotcore.vendor.settlement.manager,model_knotcore_vendor_settlement,custom_wedding_core.group_wedding_founder,1,1,1,1
+access_settlement_planner,knotcore.vendor.settlement.planner,model_knotcore_vendor_settlement,custom_wedding_core.group_wedding_planner,1,1,1,0
+access_settlement_user,knotcore.vendor.settlement.user,model_knotcore_vendor_settlement,base.group_user,1,0,0,0
+access_founder_intel_manager,knotcore.founder.intelligence.manager,model_knotcore_founder_intelligence,custom_wedding_core.group_wedding_founder,1,1,1,1
+access_founder_intel_user,knotcore.founder.intelligence.user,model_knotcore_founder_intelligence,base.group_user,1,0,0,0

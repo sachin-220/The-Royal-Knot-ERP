@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Guest Pass Tree View -->
+    <record id="view_guest_pass_tree" model="ir.ui.view">
+        <field name="name">knotcore.guest.pass.tree</field>
+        <field name="model">knotcore.guest.pass</field>
+        <field name="arch" type="xml">
+            <tree string="Banquet Guest Passes" decoration-success="is_checked_in" decoration-info="guest_category == 'vvip'" decoration-warning="guest_category == 'walkin'">
+                <field name="name"/>
+                <field name="wedding_id"/>
+                <field name="guest_name"/>
+                <field name="guest_category" widget="badge"/>
+                <field name="table_number"/>
+                <field name="is_checked_in" widget="boolean_toggle"/>
+                <field name="checkin_time"/>
+                <field name="usher_user_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Guest Pass Form View -->
+    <record id="view_guest_pass_form" model="ir.ui.view">
+        <field name="name">knotcore.guest.pass.form</field>
+        <field name="model">knotcore.guest.pass</field>
+        <field name="arch" type="xml">
+            <form string="Royal Banquet Digital Guest Pass">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
+                        <h1><field name="name"/></h1>
+                        <h2><field name="guest_name"/></h2>
+                    </div>
+
+                    <group>
+                        <group string="Guest Credentials">
+                            <field name="wedding_id"/>
+                            <field name="guest_category" widget="badge"/>
+                            <field name="guest_phone"/>
+                            <field name="table_number"/>
+                        </group>
+                        <group string="Anti-Duplicate 60s Dynamic Pass">
+                            <field name="dynamic_window_code" readonly="1" style="font-family:monospace; font-weight:bold;"/>
+                            <field name="qr_image" widget="image" class="oe_avatar" readonly="1"/>
+                            <field name="is_checked_in" widget="boolean_toggle"/>
+                            <field name="checkin_time"/>
+                            <field name="usher_user_id"/>
+                        </group>
+                    </group>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_guest_pass" model="ir.actions.act_window">
+        <field name="name">Banquet Digital Guest Passes</field>
+        <field name="res_model">knotcore.guest.pass</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

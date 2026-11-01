@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Variation Tree View -->
+    <record id="view_wedding_variation_tree" model="ir.ui.view">
+        <field name="name">knotcore.wedding.variation.tree</field>
+        <field name="model">knotcore.wedding.variation</field>
+        <field name="arch" type="xml">
+            <tree string="Live Variation Ledger" decoration-success="state == 'approved'" decoration-warning="state == 'draft'" decoration-danger="state == 'rejected'">
+                <field name="name"/>
+                <field name="wedding_id"/>
+                <field name="title"/>
+                <field name="category_id"/>
+                <field name="vendor_id"/>
+                <field name="variation_amount_client" sum="Total Client Extra Billed"/>
+                <field name="variation_amount_vendor" sum="Total Vendor Additional Cost"/>
+                <field name="agency_markup_margin" sum="Total Margin Earned"/>
+                <field name="state" widget="badge" decoration-success="state == 'approved'" decoration-warning="state == 'draft'" decoration-danger="state == 'rejected'"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Variation Form View -->
+    <record id="view_wedding_variation_form" model="ir.ui.view">
+        <field name="name">knotcore.wedding.variation.form</field>
+        <field name="model">knotcore.wedding.variation</field>
+        <field name="arch" type="xml">
+            <form string="Live Scope &amp; Financial Variation">
+                <header>
+                    <button name="action_approve_variation" string="Approve Variation Scope ✅" type="object" invisible="state != 'draft'" class="oe_highlight"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,approved,invoiced"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
+                        <h1><field name="name"/></h1>
+                        <h2><field name="title" placeholder="e.g. Extra 25 Royal Degustation Plates..."/></h2>
+                    </div>
+
+                    <group>
+                        <group string="Classification">
+                            <field name="wedding_id"/>
+                            <field name="category_id"/>
+                            <field name="vendor_id"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                        <group string="Commercial Variation Terms">
+                            <field name="variation_amount_client" widget="monetary"/>
+                            <field name="variation_amount_vendor" widget="monetary"/>
+                            <field name="agency_markup_margin" widget="monetary" decoration-success="agency_markup_margin > 0"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Detailed Scope &amp; On-Ground Justification">
+                            <field name="description" placeholder="Explain on-ground trigger (walk-in guest overflow, couple requested imported flowers, late baraat sound extension)..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_wedding_variation" model="ir.actions.act_window">
+        <field name="name">Live Variation Ledger</field>
+        <field name="res_model">knotcore.wedding.variation</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

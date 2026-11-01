@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Delay Simulator Form View -->
+    <record id="view_delay_simulator_form" model="ir.ui.view">
+        <field name="name">knotcore.delay.simulator.form</field>
+        <field name="model">knotcore.delay.simulator</field>
+        <field name="arch" type="xml">
+            <form string="Wedding Delay Ripple-Effect Simulator">
+                <header>
+                    <button name="action_approve_simulation" string="Approve Schedule Adjustment" type="object" invisible="state != 'simulated'" class="oe_highlight"/>
+                    <button name="action_publish_run_sheet" string="📢 Broadcast Adjusted Run Sheet to On-Ground Leads" type="object" invisible="state == 'published'" class="btn-success"/>
+                    <field name="state" widget="statusbar" statusbar_visible="simulated,planner_approved,published"/>
+                </header>
+                <sheet>
+                    <div class="alert alert-danger" role="alert" invisible="not curfew_violation_risk" style="margin-bottom:15px;">
+                        <h4>🚨 <b>PALACE SOUND CURFEW ALERT TRIGGERED!</b></h4>
+                        <p>Outdoor music curfews will be breached under this delay duration. Lawn amplification must be shifted to indoor heritage ballrooms by 10:00 PM.</p>
+                    </div>
+
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
+                        <h1><field name="name"/></h1>
+                        <h3><field name="wedding_id"/></h3>
+                    </div>
+
+                    <group>
+                        <group string="Delay Scenario Parameters">
+                            <field name="delayed_event_name"/>
+                            <field name="delay_minutes" string="Delay Duration (Mins)"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                        <group string="Projected Ripple Consequences">
+                            <field name="affected_events_count"/>
+                            <field name="curfew_violation_risk" widget="boolean_toggle"/>
+                            <field name="estimated_overtime_cost" widget="monetary"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Ripple-Effect Operational Impact Breakdown">
+                            <field name="impact_summary" readonly="1" style="font-family:monospace; background-color:#f8f9fa; padding:15px; border-radius:5px;"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Delay Simulator Tree View -->
+    <record id="view_delay_simulator_tree" model="ir.ui.view">
+        <field name="name">knotcore.delay.simulator.tree</field>
+        <field name="model">knotcore.delay.simulator</field>
+        <field name="arch" type="xml">
+            <tree string="Delay Ripple Scenarios" decoration-danger="curfew_violation_risk" decoration-success="state == 'published'">
+                <field name="name"/>
+                <field name="wedding_id"/>
+                <field name="delayed_event_name"/>
+                <field name="delay_minutes" string="Delay (Mins)"/>
+                <field name="curfew_violation_risk" widget="boolean_toggle"/>
+                <field name="estimated_overtime_cost"/>
+                <field name="state" widget="badge" decoration-success="state == 'published'" decoration-warning="state == 'planner_approved'" decoration-info="state == 'simulated'"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_delay_simulator" model="ir.actions.act_window">
+        <field name="name">Delay Ripple-Effect Simulator</field>
+        <field name="res_model">knotcore.delay.simulator</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>
