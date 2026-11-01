@@ -286,6 +286,88 @@ export default function EnquiriesView() {
 
       </div>
 
+      {/* Analytical Visualisations: Pipeline Stage Distribution & Destination City Spread */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px' }}>
+        {/* Chart A: Lead Stage Distribution */}
+        <div className="stocksense-card" style={{ padding: '20px 22px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+            <div>
+              <h3 style={{ fontSize: '0.98rem', fontWeight: 600, color: '#18181b', margin: 0 }}>
+                Lead Pipeline Distribution
+              </h3>
+              <p style={{ fontSize: '0.74rem', color: '#71717a', margin: '2px 0 0' }}>
+                Progression across intake, proposal review, and signed contracts
+              </p>
+            </div>
+            <span className="badge-sku" style={{ fontSize: '0.68rem' }}>16 Inquiries</span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {[
+              { label: 'New Inquiries', count: 5, pct: 31, color: '#4f46e5' },
+              { label: 'Proposals Dispatched', count: 4, pct: 25, color: '#6366f1' },
+              { label: 'RFP Broadcast Active', count: 4, pct: 25, color: '#818cf8' },
+              { label: 'Signed Contracts', count: 3, pct: 19, color: '#10b981' }
+            ].map(item => (
+              <div key={item.label} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem' }}>
+                  <span style={{ color: '#27272a', fontWeight: 500 }}>{item.label}</span>
+                  <span style={{ color: '#18181b', fontWeight: 700 }}>{item.count} Leads ({item.pct}%)</span>
+                </div>
+                <div style={{ width: '100%', height: '6px', background: '#f4f4f5', borderRadius: '3px', overflow: 'hidden' }}>
+                  <div style={{ width: `${item.pct * 2.5}%`, height: '100%', background: item.color, borderRadius: '3px' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Chart B: Preferred Destination Cities */}
+        <div className="stocksense-card" style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div>
+                <h3 style={{ fontSize: '0.98rem', fontWeight: 600, color: '#18181b', margin: 0 }}>
+                  Destination Geography
+                </h3>
+                <p style={{ fontSize: '0.74rem', color: '#71717a', margin: '2px 0 0' }}>
+                  Client inquiries by Rajasthan heritage destination
+                </p>
+              </div>
+              <span className="status-pill status-pill-green" style={{ fontSize: '0.68rem' }}>Palace Network</span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginTop: '6px' }}>
+              <div style={{ padding: '10px 12px', background: '#fafafa', borderRadius: '8px', border: '1px solid #f4f4f5' }}>
+                <div style={{ fontSize: '0.7rem', color: '#71717a' }}>Jaipur</div>
+                <div style={{ fontSize: '1.15rem', fontWeight: 700, color: '#18181b', marginTop: '2px' }}>7 Leads</div>
+                <div style={{ fontSize: '0.66rem', color: '#4f46e5', marginTop: '2px' }}>₹3.2 Cr avg budget</div>
+              </div>
+              <div style={{ padding: '10px 12px', background: '#fafafa', borderRadius: '8px', border: '1px solid #f4f4f5' }}>
+                <div style={{ fontSize: '0.7rem', color: '#71717a' }}>Udaipur</div>
+                <div style={{ fontSize: '1.15rem', fontWeight: 700, color: '#18181b', marginTop: '2px' }}>6 Leads</div>
+                <div style={{ fontSize: '0.66rem', color: '#4f46e5', marginTop: '2px' }}>₹3.8 Cr avg budget</div>
+              </div>
+              <div style={{ padding: '10px 12px', background: '#fafafa', borderRadius: '8px', border: '1px solid #f4f4f5' }}>
+                <div style={{ fontSize: '0.7rem', color: '#71717a' }}>Jodhpur</div>
+                <div style={{ fontSize: '1.15rem', fontWeight: 700, color: '#18181b', marginTop: '2px' }}>2 Leads</div>
+                <div style={{ fontSize: '0.66rem', color: '#4f46e5', marginTop: '2px' }}>₹4.2 Cr avg budget</div>
+              </div>
+              <div style={{ padding: '10px 12px', background: '#fafafa', borderRadius: '8px', border: '1px solid #f4f4f5' }}>
+                <div style={{ fontSize: '0.7rem', color: '#71717a' }}>Jaisalmer</div>
+                <div style={{ fontSize: '1.15rem', fontWeight: 700, color: '#18181b', marginTop: '2px' }}>1 Lead</div>
+                <div style={{ fontSize: '0.66rem', color: '#4f46e5', marginTop: '2px' }}>₹3.8 Cr avg budget</div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f4f4f5', display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem' }}>
+            <span style={{ color: '#71717a' }}>Total Inquired Portfolio:</span>
+            <span style={{ fontWeight: 700, color: '#16a34a' }}>₹56.8 Cr Total Demand</span>
+          </div>
+        </div>
+      </div>
+
       {/* Main Table: User Enquiries & ML Prediction */}
       <div className="saas-card" style={{ padding: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>

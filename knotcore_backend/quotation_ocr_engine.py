@@ -49,19 +49,89 @@ class QuotationOCREngine:
             return None
 
     @classmethod
+    def extract_text_from_pdf_bytes(cls, pdf_bytes: bytes) -> str:
+        """Extracts text content from PDF bytes using pypdf."""
+        try:
+            import io
+            import pypdf
+            reader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
+            pages_text = []
+            for page in reader.pages:
+                txt = page.extract_text()
+                if txt:
+                    pages_text.append(txt)
+            return "\n".join(pages_text)
+        except Exception as e:
+            print(f"[PDF Extraction Error] {e}")
+            return ""
+
+    @classmethod
+    def extract_text_from_image_bytes(cls, image_bytes: bytes, filename: str = "quote.jpg") -> str:
+        """Extracts commercial quotation text from image bytes using Gemini Multimodal Vision API."""
+        import base64
+        import urllib.request
+        from dotenv import load_dotenv
+        load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
+        api_key = os.getenv("GEMINI_API_KEY", "").strip()
+        if not api_key:
+            return ""
+
+        b64_image = base64.b64encode(image_bytes).decode("utf-8")
+        mime_type = "image/png" if filename.lower().endswith(".png") else "image/jpeg"
+        prompt = (
+            "You are an OCR and commercial procurement transcription engine for KnotCore Luxury Weddings. "
+            "Transcribe all text from this vendor quotation image accurately, including vendor company name, "
+            "service category (e.g. Catering CAT-02, Floral CAT-03), item scope, quantity of plates/units, "
+            "unit rate, subtotal, and total quotation amount in INR."
+        )
+        payload = {
+            "contents": [{
+                "parts": [
+                    {"text": prompt},
+                    {"inline_data": {"mime_type": mime_type, "data": b64_image}}
+                ]
+            }],
+            "generationConfig": {"temperature": 0.1}
+        }
+        models = [
+            "gemini-flash-lite-latest",
+            "gemini-3-flash-preview",
+            "gemini-flash-latest"
+        ]
+        for model in models:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+            try:
+                req = urllib.request.Request(
+                    url,
+                    data=json.dumps(payload).encode("utf-8"),
+                    headers={"Content-Type": "application/json"},
+                    method="POST"
+                )
+                with urllib.request.urlopen(req, timeout=12) as response:
+                    res_body = json.loads(response.read().decode("utf-8"))
+                    cand = res_body.get("candidates", [])
+                    if cand:
+                        return cand[0]["content"]["parts"][0]["text"]
+            except Exception as e:
+                print(f"[Gemini Vision Quote OCR Error on {model}] {e}")
+        return ""
+
+    @classmethod
     def process_vendor_submission(
         cls,
         text_content: str,
         vendor_sender_name: str = "Supplier",
         chat_id: Optional[int] = None,
-        pending_session: Optional[Dict[str, Any]] = None
+        pending_session: Optional[Dict[str, Any]] = None,
+        inquiry_ref: Optional[str] = None,
+        inquiry_id: Optional[int] = None
     ) -> Dict[str, Any]:
         """
         Processes incoming vendor submission:
         1. Confirms whether it is a quotation or not.
         2. Detects missing fields (especially QUANTITY).
         3. If missing, requests 'fill in the blanks' dynamically.
-        4. If complete, saves to vendor_quotes and returns WCI + anomaly details.
+        4. If complete, saves to vendor_quotes under inquiry_ref and returns WCI + anomaly details.
         """
         # If answering a previous fill-in-the-blanks prompt
         if pending_session and pending_session.get("is_waiting_for_missing"):
@@ -85,6 +155,10 @@ class QuotationOCREngine:
 
         # 2. Step 2: Extract structured fields
         extracted = cls._extract_quotation_fields(text_content, vendor_sender_name)
+        if inquiry_ref:
+            extracted["inquiry_ref"] = inquiry_ref
+        if inquiry_id:
+            extracted["inquiry_id"] = inquiry_id
 
         # 3. Step 3: Check for missing fields (Fill in the blanks)
         missing_fields = []
@@ -111,7 +185,7 @@ class QuotationOCREngine:
             prompt_text = (
                 "<b>[QUOTATION RECEIVED - MISSING PARAMETERS]</b>\n\n"
                 f"Thank you, <b>{extracted['vendor_name']}</b>! We identified your quote for <i>'{extracted['item_description']}'</i>, "
-                "but the following essential procurement parameter(s) are missing:\n\n"
+                f"mapped under <code>{extracted.get('inquiry_ref', 'INQ-0011')}</code>, but the following parameter(s) are missing:\n\n"
                 + "\n".join(blank_prompts) + "\n\n"
                 "<b>Please reply directly with the missing information:</b>\n"
                 f"<i>(e.g., reply 'Quantity: 524 plates' or simply '524')</i>"
@@ -197,25 +271,34 @@ class QuotationOCREngine:
         elif "sound" in t_low or cat_code == "CAT-05":
             desc = "Meyer Sound Concert Line Arrays & Moving Beam Lighting"
 
+        # Inquiry Reference
+        inq_match = re.search(r'INQ[-_]?(\d+)', text, re.IGNORECASE)
+        inquiry_id = int(inq_match.group(1)) if inq_match else 11
+        inquiry_ref = f"INQ-{inquiry_id:04d}"
+
         # 4. Total Price
         price = 0.0
+        tot_match = re.search(r'(?:total\s+quoted\s+commercial\s+price|grand\s+total|total\s+commercial\s+price|total\s+payable|total\s+amount|subtotal|total)[^\d\n\r]*[\r\n\s]*[^\d\n\r]*([\d,]{6,14})(?:\.\d{2})?', text, re.IGNORECASE)
+        plain_bid_match = re.search(r'/bid\s+\S+\s+\S+\s+(\d+)', text)
         crore_match = re.search(r'(\d+(?:\.\d+)?)\s*(?:cr|crore|crores)', t_low)
         lakh_match = re.search(r'(\d+(?:\.\d+)?)\s*(?:lakh|lakhs|lac|lacs|l)\b', t_low)
-        num_inr_match = re.search(r'(?:₹|inr|rs\.?|total[:\s]*)\s*([\d,]{5,12})', t_low)
-        plain_bid_match = re.search(r'/bid\s+\S+\s+\S+\s+(\d+)', text)
 
         if plain_bid_match:
             price = float(plain_bid_match.group(1))
+        elif tot_match:
+            price = float(tot_match.group(1).replace(',', ''))
         elif crore_match:
             price = float(crore_match.group(1)) * 10000000.0
         elif lakh_match:
             price = float(lakh_match.group(1)) * 100000.0
-        elif num_inr_match:
-            price = float(num_inr_match.group(1).replace(',', ''))
         else:
-            nums = [float(n.replace(',', '')) for n in re.findall(r'\b\d{6,8}\b', text)]
-            if nums:
-                price = max(nums)
+            num_inr_match = re.search(r'(?:₹|inr|rs\.?|■)\s*([\d,]{5,14})', t_low)
+            if num_inr_match:
+                price = float(num_inr_match.group(1).replace(',', ''))
+            else:
+                nums = [float(n.replace(',', '')) for n in re.findall(r'\b\d{6,8}\b', text)]
+                if nums:
+                    price = max(nums)
 
         # 5. Quantity
         quantity = None
@@ -230,6 +313,8 @@ class QuotationOCREngine:
         unit_rate = (price / quantity) if (price and quantity) else None
 
         return {
+            "inquiry_id": inquiry_id,
+            "inquiry_ref": inquiry_ref,
             "category_code": cat_code,
             "category_name": cat_meta["name"],
             "vendor_name": vendor_name,
@@ -312,21 +397,23 @@ class QuotationOCREngine:
                         wedding_id, category_code, category_name, vendor_name,
                         item_description, quantity, unit_rate, quoted_price,
                         historical_avg, std_dev, quality_score, delivery_score,
-                        financial_stability_score, wci_score, anomaly_flag, status
-                    ) VALUES (1, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        financial_stability_score, wci_score, anomaly_flag, status,
+                        inquiry_id, inquiry_ref
+                    ) VALUES (1, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     RETURNING id;
                 """, (
                     cat_code, extracted["category_name"], extracted["vendor_name"],
                     extracted["item_description"], extracted.get("quantity", 1),
                     extracted.get("unit_rate", price), price,
                     hist_avg, std_dev, quality, delivery, financial,
-                    wci_score, is_anomaly, 'rejected' if is_anomaly else 'submitted'
+                    wci_score, is_anomaly, 'rejected' if is_anomaly else 'submitted',
+                    extracted.get("inquiry_id", 11), extracted.get("inquiry_ref", "INQ-0011")
                 ))
                 quote_id = cur.fetchone()[0]
                 conn.commit()
                 cur.close()
                 conn.close()
-                print(f"[SUCCESS] Ingested verified quotation #{quote_id} for '{extracted['vendor_name']}'!")
+                print(f"[SUCCESS] Ingested verified quotation #{quote_id} for '{extracted['vendor_name']}' under inquiry {extracted.get('inquiry_ref', 'INQ-0011')}!")
             except Exception as e:
                 print(f"[DB Quote Ingest Error] {e}")
                 if conn:
@@ -339,15 +426,18 @@ class QuotationOCREngine:
 
         confirm_msg = (
             "<b>[VENDOR QUOTATION VERIFIED & PLACED IN COMPARISON GRID]</b>\n\n"
+            f"• <b>Inquiry Reference:</b> <code>{extracted.get('inquiry_ref', 'INQ-0011')}</code>\n"
             f"• <b>Bid Reference:</b> <code>BID-{quote_id or secrets.randbelow(800)+100}</code>\n"
             f"• <b>Vendor:</b> {extracted['vendor_name']}\n"
             f"• <b>Service:</b> {extracted['item_description']}\n"
             f"• <b>Category:</b> {cat_code} ({extracted['category_name']})\n"
             f"• <b>Quantity:</b> {extracted.get('quantity', 1)} Units\n"
-            f"• <b>Quoted Price:</b> ₹{(price/100000):.2f} Lakhs\n"
+            f"• <b>Quoted Price:</b> ₹{(price/100000):.2f} Lakhs (₹{price:,.2f})\n"
             f"• <b>WCI Evaluation Score:</b> <b>{wci_score} / 100</b>\n"
             f"{anomaly_alert}\n\n"
-            "<b>[ONE-WAY MIRROR SECURED]:</b> Your quotation has been placed in the KnotCore Comparison Grid. Competing vendors cannot view your pricing."
+            f"<b>[ONE-WAY MIRROR SECURED]:</b> Your quotation has been securely mapped under <code>{extracted.get('inquiry_ref', 'INQ-0011')}</code> "
+            "and placed into the KnotCore Comparison Grid. Competing vendors cannot view your pricing. "
+            "When the Client / Lead Planner awards the Purchase Order, you will receive instant notification."
         )
 
         return {

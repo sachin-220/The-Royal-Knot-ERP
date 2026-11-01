@@ -19,7 +19,7 @@ class GeminiLeadExtractor:
     failover (gemini-3.5-flash, gemini-flash-latest, gemini-2.5-flash-lite)
     and an intelligent offline dialog fallback.
     """
-    CANDIDATE_MODELS = ["gemini-3.5-flash", "gemini-flash-latest", "gemini-2.5-flash-lite"]
+    CANDIDATE_MODELS = ["gemini-3-flash-preview", "gemini-flash-latest", "gemini-flash-lite-latest", "gemini-3.1-flash-lite-preview"]
 
     @classmethod
     def _get_api_key(cls) -> str:
@@ -96,16 +96,17 @@ class GeminiLeadExtractor:
             "Step 4: Target Total Budget in INR (e.g. 2.5 Cr) & Aesthetic Theme (Vedic, Royal Heritage, Lakeside)\n\n"
             "INSTRUCTIONS:\n"
             "1. ZERO-INPUT EXTRACTION: Extract ALL parameters the user mentioned anywhere in their message.\n"
-            "   - couple_names: string or null\n"
+            "   - couple_names: strictly Bride & Groom names (e.g. 'Aarav & Diya'). NEVER include sentences, destinations, or prepositions.\n"
             "   - destination: 'jaipur' or 'udaipur' or null\n"
-            "   - duration_days: integer or null\n"
+            "   - duration_days: integer or null (if user specifies 'partial', 'half day', 'single day', or 1 day, set duration_days: 1 and is_partial: true)\n"
             "   - guest_count: integer or null\n"
             "   - budget_inr: float total in INR or null (e.g., 2.5 Cr = 25000000, 80 Lakhs = 8000000)\n"
             "   - wedding_theme: string or null\n"
-            "   - preferred_dates: string or null\n\n"
+            "   - preferred_dates: string or null\n"
+            "   - is_partial: boolean (true if user specifies partial, 1 day, or half day)\n\n"
             "2. DETERMINE NEXT REQUIRED STEP:\n"
             "   - If destination or couple_names is missing -> Step 1\n"
-            "   - Else if duration_days is missing -> Step 2\n"
+            "   - Else if duration_days is missing and not is_partial -> Step 2\n"
             "   - Else if guest_count is missing -> Step 3\n"
             "   - Else if budget_inr is missing -> Step 4\n"
             "   - Else -> Step 5 (Completed!)\n\n"
@@ -115,7 +116,7 @@ class GeminiLeadExtractor:
             "   - If all 4 steps are complete, present a magnificent Royal Enquiry Summary with ML buffer preview (+17%) and confirm submission to the KnotCore Executive Dashboard.\n\n"
             "Return JSON with keys:\n"
             "- 'reply': string (HTML formatted with <b>, <i>, <ul>, <li>)\n"
-            "- 'extracted': object with couple_names, destination, duration_days, guest_count, budget_inr, wedding_theme, preferred_dates\n"
+            "- 'extracted': object with couple_names, destination, duration_days, guest_count, budget_inr, wedding_theme, preferred_dates, is_partial\n"
             "- 'next_step': integer (1, 2, 3, 4, or 5 if completed)\n"
             "- 'is_completed': boolean (true if destination, guest_count, and budget_inr are present)"
         )
@@ -126,7 +127,7 @@ class GeminiLeadExtractor:
                 data = json.loads(raw_output)
                 extracted = data.get("extracted", {})
                 merged = dict(existing_data)
-                for k in ["couple_names", "destination", "duration_days", "guest_count", "budget_inr", "wedding_theme", "preferred_dates"]:
+                for k in ["couple_names", "destination", "duration_days", "guest_count", "budget_inr", "wedding_theme", "preferred_dates", "is_partial"]:
                     val = extracted.get(k)
                     if val is not None and val != "" and val != "null":
                         merged[k] = val
@@ -160,20 +161,43 @@ class GeminiLeadExtractor:
         text_lower = text.lower()
         merged = dict(existing)
 
-        # 1. Parameter extraction
-        if not merged.get("couple_names") and ("&" in text or "and" in text):
-            merged["couple_names"] = text.strip()
+        # 1. Parameter extraction: Clean couple names without sentences or prepositions
+        stop_words = {"in", "at", "on", "this", "our", "the", "my", "a", "an", "udaipur", "jaipur", "jodhpur", "goa", "december", "january", "february", "march"}
+        couple_match = re.search(r'(?:wedding\s+for|affair\s+for|celebration\s+for|couple:?|names:?|for)\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)\s+(?:and|&)\s+([A-Za-z]+(?:\s+[A-Za-z]+)?)', text, re.IGNORECASE)
+        if couple_match:
+            p1_parts = [w for w in couple_match.group(1).split() if w.lower() not in stop_words]
+            p2_parts = [w for w in couple_match.group(2).split() if w.lower() not in stop_words]
+            if p1_parts and p2_parts:
+                merged["couple_names"] = f"{' '.join(p1_parts).capitalize()} & {' '.join(p2_parts).capitalize()}"
+        elif not merged.get("couple_names") and ("&" in text or " and " in text) and len(text.split()) <= 4:
+            clean_parts = [w for w in text.split() if w.lower() not in stop_words]
+            merged["couple_names"] = " ".join(clean_parts).title()
         elif not merged.get("couple_names"):
-            merged["couple_names"] = f"{sender_name} & Partner"
+            clean_sender = sender_name.replace("@", "").strip()
+            merged["couple_names"] = f"{clean_sender} & Partner" if clean_sender else "Aarav & Diya"
 
         if 'jaipur' in text_lower:
             merged['destination'] = 'Jaipur'
         elif 'udaipur' in text_lower:
             merged['destination'] = 'Udaipur'
+        elif 'jodhpur' in text_lower:
+            merged['destination'] = 'Jodhpur'
+        elif 'goa' in text_lower:
+            merged['destination'] = 'Goa'
 
-        day_match = re.search(r'(\d+)\s*(?:days?|day)\b', text_lower)
+        # Check for partial / single-day / half-day celebration keywords
+        if any(k in text_lower for k in ["partial", "half day", "half-day", "halfday", "single day", "1 day", "one day", "only sangeet", "only reception", "only wedding", "partial wedding", "partial celebration"]):
+            merged['duration_days'] = 1
+            merged['is_partial'] = True
+            if any(k in text_lower for k in ["half day", "half-day", "halfday"]):
+                merged['is_half_day'] = True
+
+        day_match = re.search(r'(\d+)\s*[- ]?(?:days?|day)\b', text_lower)
         if day_match:
-            merged['duration_days'] = int(day_match.group(1))
+            d_count = int(day_match.group(1))
+            merged['duration_days'] = d_count
+            if d_count == 1:
+                merged['is_partial'] = True
 
         guest_match = re.search(r'(\d+)\s*(?:guests?|people|pax|members?|attendees?|invitees?)', text_lower)
         if guest_match:
@@ -186,6 +210,10 @@ class GeminiLeadExtractor:
         elif lakh_match:
             merged['budget_inr'] = float(lakh_match.group(1)) * 100000.0
 
+        date_match = re.search(r'\b(december|january|february|march|april|may|june|july|august|september|october|november|winter|spring|autumn)\b', text_lower)
+        if date_match:
+            merged['preferred_dates'] = date_match.group(1).capitalize()
+
         # Step Progression
         if not merged.get("destination"):
             next_step = 1
@@ -194,11 +222,11 @@ class GeminiLeadExtractor:
                 "<b>Step 1 of 4: Couple & Destination</b>\n"
                 "Please share the names of the Bride & Groom, and whether your heart is set on <b>Jaipur</b> (Rambagh/Samode) or <b>Udaipur</b> (City Palace/Jagmandir)."
             )
-        elif not merged.get("duration_days"):
+        elif not merged.get("duration_days") and not merged.get("is_partial"):
             next_step = 2
             reply = (
                 f" <b>Step 2 of 4: Celebration Span & Dates</b>\n\n"
-                f"Splendid! For your celebration in <b>{merged['destination']}</b>, how many days are you planning (e.g. 3-day royal affair: Mehendi, Sangeet, Pheras) and do you have tentative preferred dates?"
+                f"Splendid! For your celebration in <b>{merged['destination']}</b>, how many days are you planning (e.g. <b>3-day royal affair</b> or <b>partial / 1-day / half-day celebration</b>) and do you have tentative preferred dates?"
             )
         elif not merged.get("guest_count"):
             next_step = 3
@@ -217,11 +245,12 @@ class GeminiLeadExtractor:
             next_step = 5
             b_cr = f"₹{(merged['budget_inr']/10000000):.2f} Cr"
             predicted_pax = int(merged['guest_count'] * 1.17)
+            span_desc = "Partial Royal Celebration (1 Day / Half-Day based on timing)" if merged.get("is_partial") else f"{merged.get('duration_days', 3)} Days Celebration"
             reply = (
                 " <b>YOUR ROYAL ENQUIRY IS OFFICIALLY REGISTERED!</b>\n\n"
                 f"• <b>Couple:</b> {merged.get('couple_names', sender_name)}\n"
                 f"• <b>Destination:</b> {merged['destination']}\n"
-                f"• <b>Duration:</b> {merged.get('duration_days', 3)} Days Celebration\n"
+                f"• <b>Celebration Span:</b> {span_desc}\n"
                 f"• <b>Guest Estimate:</b> {merged['guest_count']} Confirmed\n"
                 f"• <b>ML Predicted Turnout:</b> {predicted_pax} Guests (+17% Buffer)\n"
                 f"• <b>Anticipated Budget:</b> {b_cr}\n\n"

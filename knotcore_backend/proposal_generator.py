@@ -104,6 +104,8 @@ def generate_wedding_proposal_pdf(
     budget_val = inquiry_data.get("budget_inr") or 25000000.0
     budget_cr = f"₹{(float(budget_val)/10000000):.2f} Crores"
     today_str = datetime.date.today().strftime("%B %d, %Y")
+    inq_id_val = inquiry_data.get("id") or 11
+    inquiry_ref = f"INQ-{inq_id_val:04d}"
 
     meta_table_data = [
         [
@@ -117,6 +119,10 @@ def generate_wedding_proposal_pdf(
         [
             Paragraph(f"<b>Base Confirmed Guests:</b> {guests} Guests", body_style),
             Paragraph(f"<b>Allocated Total Budget:</b> {budget_cr}", body_style)
+        ],
+        [
+            Paragraph(f"<b>Official Inquiry ID:</b> <font color='#aa771c'><b>{inquiry_ref}</b></font>", body_style),
+            Paragraph(f"<b>Vendor Quote Telegram Command:</b> <code>/quote{inquiry_ref}</code>", body_style)
         ]
     ]
 

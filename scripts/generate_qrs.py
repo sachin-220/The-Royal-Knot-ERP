@@ -7,7 +7,7 @@ import os
 import qrcode
 from PIL import Image, ImageDraw, ImageFont
 
-def create_styled_qr(data: str, title: str, subtitle: str, output_path: str, color="#0b132b"):
+def create_styled_qr(data: str, title: str, subtitle: str, output_path: str, color="#0b132b", bot_username="Royalknot_bot"):
     # Generate QR Code
     qr = qrcode.QRCode(
         version=3,
@@ -50,7 +50,7 @@ def create_styled_qr(data: str, title: str, subtitle: str, output_path: str, col
 
     # Draw Footer
     draw.text((canvas_w // 2, canvas_h - 45), "Scan with your Phone Camera", fill="#475569", font=font_footer, anchor="mm")
-    draw.text((canvas_w // 2, canvas_h - 25), "Redirects to @Royalknot_bot", fill="#0b132b", font=font_footer, anchor="mm")
+    draw.text((canvas_w // 2, canvas_h - 25), f"Redirects to @{bot_username}", fill="#0b132b", font=font_footer, anchor="mm")
 
     # Save image
     canvas.save(output_path, "PNG")
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     frontend_public = os.path.join(workspace_root, "frontend", "public")
     os.makedirs(frontend_public, exist_ok=True)
 
-    # 1. Client Inquiry QR: scan.png
+    # 1. Client Inquiry QR: scan.png -> @Royalknot_bot
     client_url = "https://t.me/Royalknot_bot?start=client_enquiry"
     client_dest1 = os.path.join(workspace_root, "scan.png")
     client_dest2 = os.path.join(frontend_public, "scan.png")
@@ -70,31 +70,35 @@ if __name__ == "__main__":
         client_url, 
         "THE ROYAL KNOT", 
         "Client Wedding Enquiry | Unified Bot", 
-        client_dest1
+        client_dest1,
+        bot_username="Royalknot_bot"
     )
     create_styled_qr(
         client_url, 
         "THE ROYAL KNOT", 
         "Client Wedding Enquiry | Unified Bot", 
-        client_dest2
+        client_dest2,
+        bot_username="Royalknot_bot"
     )
 
-    # 2. Vendor Portal QR: vendor_scan.png
-    vendor_url = "https://t.me/Royalknot_bot?start=vendor_portal"
+    # 2. Vendor Portal QR: vendor_scan.png -> @Royalknot_vendors_bot
+    vendor_url = "https://t.me/Royalknot_vendors_bot?start=vendor_portal"
     vendor_dest1 = os.path.join(workspace_root, "vendor_scan.png")
     vendor_dest2 = os.path.join(frontend_public, "vendor_scan.png")
 
     create_styled_qr(
         vendor_url, 
         "VENDOR PROCUREMENT", 
-        "One-Way Mirror Blind Bidding Group", 
+        "One-Way Mirror Blind Bidding & Coordination", 
         vendor_dest1,
-        color="#1e293b"
+        color="#1e293b",
+        bot_username="Royalknot_vendors_bot"
     )
     create_styled_qr(
         vendor_url, 
         "VENDOR PROCUREMENT", 
-        "One-Way Mirror Blind Bidding Group", 
+        "One-Way Mirror Blind Bidding & Coordination", 
         vendor_dest2,
-        color="#1e293b"
+        color="#1e293b",
+        bot_username="Royalknot_vendors_bot"
     )

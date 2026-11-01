@@ -1,57 +1,65 @@
-/* KnotCore Light SaaS Design System — Inspired by Modern Dashboard Architecture */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;0,900;1,400&display=swap');
+/* KnotCore ERP — StockSense Design System
+   Architectural off-white canvas, serif editorial typography, precision grid, and clean minimal navigation.
+   Zero emojis strictly enforced. */
+
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto:ital,wght@0,300;0,400;0,500;0,700;0,900;1,400&display=swap');
 
 :root {
-  --color-bg-page: #f8fafc;
-  --color-bg-sidebar: #ffffff;
+  /* StockSense Canvas & Surface */
+  --color-bg-page: #f6f6f4;
   --color-bg-card: #ffffff;
-  --color-bg-card-hover: #ffffff;
-  --color-bg-muted: #f1f5f9;
+  --color-bg-card-hover: #fafafa;
+  --color-bg-muted: #f0f0ed;
+  --color-bg-subtle: #f8f8f6;
   
-  --color-border: #e2e8f0;
-  --color-border-subtle: #f1f5f9;
+  /* Precision Borders */
+  --color-border: #e7e7e4;
+  --color-border-subtle: #eeeeea;
+  --color-border-hover: #d3d3ce;
   
-  --color-primary: #4f46e5;
-  --color-primary-hover: #4338ca;
-  --color-primary-light: #eef2ff;
-  --color-primary-border: #c7d2fe;
-  
-  --color-emerald: #10b981;
-  --color-emerald-light: #ecfdf5;
-  --color-emerald-border: #a7f3d0;
-  
-  --color-cyan: #0ea5e9;
-  --color-cyan-light: #f0f9ff;
-  
-  --color-purple: #8b5cf6;
-  --color-purple-light: #faf5ff;
-  
+  /* Primary & Accents */
+  --color-dark: #18181b;
+  --color-dark-hover: #27272a;
   --color-amber: #f59e0b;
-  --color-amber-light: #fffbeb;
+  --color-amber-dark: #d97706;
+  --color-amber-light: #fef3c7;
   --color-amber-border: #fde68a;
   
-  --color-red: #ef4444;
-  --color-red-light: #fef2f2;
-  --color-red-border: #fecaca;
-
-  --color-text-title: #0f172a;
-  --color-text-body: #334155;
-  --color-text-muted: #64748b;
-  --color-text-dim: #94a3b8;
-
-  --font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
-
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
-  --shadow-elevated: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+  --color-emerald: #16a34a;
+  --color-emerald-light: #ecfdf5;
+  --color-emerald-border: #bbf7d0;
   
-  --radius-xs: 6px;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  --color-rose: #dc2626;
+  --color-rose-light: #fef2f2;
+  --color-rose-border: #fecaca;
+
+  --color-slate-blue: #4f46e5;
+  --color-slate-blue-light: #eef2ff;
+
+  /* Typography Colors */
+  --color-text-title: #18181b;
+  --color-text-body: #3f3f46;
+  --color-text-muted: #71717a;
+  --color-text-dim: #a1a1aa;
+
+  /* Fonts */
+  --font-serif: 'Newsreader', 'Playfair Display', Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Shadows */
+  --shadow-subtle: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02);
+  --shadow-dropdown: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+  
+  /* Radii */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
   --radius-full: 9999px;
 
-  --transition: all 0.2s ease-in-out;
+  --transition: all 0.15s ease-in-out;
 }
 
 * {
@@ -63,35 +71,43 @@
 body {
   background-color: var(--color-bg-page);
   color: var(--color-text-body);
-  font-family: var(--font-family);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
   overflow-x: hidden;
 }
 
-/* Custom Scrollbar */
+/* Custom Minimal Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--color-bg-muted);
+  background: var(--color-bg-page);
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #d4d4d8;
   border-radius: var(--radius-full);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #a1a1aa;
 }
 
-/* Typography Utilities */
-.font-roboto {
-  font-family: var(--font-family);
+/* Typography Helpers */
+.font-serif {
+  font-family: var(--font-serif);
 }
 
-/* Modern Card Surface */
-.saas-card {
+.font-sans {
+  font-family: var(--font-sans);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* StockSense Card Surface */
+.stocksense-card, .saas-card, .glass-panel {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -99,168 +115,162 @@ body {
   transition: var(--transition);
 }
 
-.saas-card:hover {
-  box-shadow: var(--shadow-elevated);
+.stocksense-card:hover, .saas-card:hover {
+  border-color: var(--color-border-hover);
 }
 
-/* Glass panel compatibility fallback to modern saas-card */
-.glass-panel {
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-}
-
-/* Buttons */
-.btn-primary {
-  background: var(--color-primary);
+/* Dark Pill Button (StockSense primary interaction) */
+.btn-dark-pill, .btn-primary, .btn-royal-gold {
+  background: var(--color-dark);
   color: #ffffff;
-  border: 1px solid var(--color-primary);
-  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-dark);
+  border-radius: var(--radius-md);
   padding: 8px 16px;
-  font-size: 0.85rem;
+  font-size: 0.84rem;
   font-weight: 500;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   transition: var(--transition);
-  font-family: var(--font-family);
+  font-family: var(--font-sans);
 }
 
-.btn-primary:hover {
-  background: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
+.btn-dark-pill:hover, .btn-primary:hover, .btn-royal-gold:hover {
+  background: var(--color-dark-hover);
+  border-color: var(--color-dark-hover);
 }
 
-.btn-outline {
+/* Outline Pill Button */
+.btn-outline, .btn-royal-outline {
   background: #ffffff;
-  color: var(--color-text-body);
+  color: var(--color-text-title);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   padding: 8px 16px;
-  font-size: 0.85rem;
+  font-size: 0.84rem;
   font-weight: 500;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   transition: var(--transition);
-  font-family: var(--font-family);
+  font-family: var(--font-sans);
 }
 
-.btn-outline:hover {
-  background: var(--color-bg-muted);
-  border-color: #cbd5e1;
+.btn-outline:hover, .btn-royal-outline:hover {
+  background: var(--color-bg-subtle);
+  border-color: var(--color-border-hover);
 }
 
-/* Compatibility aliases for previous classes */
-.btn-royal-gold {
-  background: var(--color-primary);
-  color: #ffffff;
-  border: 1px solid var(--color-primary);
-  border-radius: var(--radius-sm);
-  padding: 8px 16px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
+/* Code SKU Badge (like PROD-101 in StockSense) */
+.badge-sku {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  transition: var(--transition);
-  font-family: var(--font-family);
-}
-
-.btn-royal-gold:hover {
-  background: var(--color-primary-hover);
-}
-
-.btn-royal-outline {
-  background: #ffffff;
-  color: var(--color-text-body);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 8px 16px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  transition: var(--transition);
-  font-family: var(--font-family);
-}
-
-.btn-royal-outline:hover {
-  background: var(--color-bg-muted);
-}
-
-/* Clean Modern Badges */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
   padding: 3px 8px;
-  border-radius: var(--radius-xs);
-  font-size: 0.72rem;
+  background: #f4f4f5;
+  border: 1px solid #e4e4e7;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
   font-weight: 600;
+  color: #3f3f46;
   letter-spacing: 0.02em;
 }
 
-.badge-primary, .badge-gold {
-  background: var(--color-primary-light);
-  color: var(--color-primary);
-  border: 1px solid var(--color-primary-border);
+/* Clean StockSense Status Pills */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
-.badge-emerald {
+.status-pill-green, .badge-emerald {
   background: var(--color-emerald-light);
   color: var(--color-emerald);
   border: 1px solid var(--color-emerald-border);
 }
 
-.badge-sapphire {
-  background: var(--color-cyan-light);
-  color: var(--color-cyan);
-  border: 1px solid #bae6fd;
-}
-
-.badge-amber {
+.status-pill-amber, .badge-amber, .badge-gold {
   background: var(--color-amber-light);
-  color: var(--color-amber);
+  color: var(--color-amber-dark);
   border: 1px solid var(--color-amber-border);
 }
 
-.badge-ruby {
-  background: var(--color-red-light);
-  color: var(--color-red);
-  border: 1px solid var(--color-red-border);
+.status-pill-red, .badge-ruby {
+  background: var(--color-rose-light);
+  color: var(--color-rose);
+  border: 1px solid var(--color-rose-border);
 }
 
-/* Tables */
+.status-pill-neutral, .badge-sapphire, .badge-primary {
+  background: #f4f4f5;
+  color: #52525b;
+  border: 1px solid #e4e4e7;
+}
+
+/* StockSense Table Architecture */
+.stocksense-table-container {
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-subtle);
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
 }
 
 thead th {
-  background: #f8fafc;
-  color: #64748b;
-  font-size: 0.75rem;
+  background: #fafafa;
+  color: #71717a;
+  font-size: 0.72rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 12px 16px;
+  letter-spacing: 0.05em;
+  padding: 14px 18px;
   border-bottom: 1px solid var(--color-border);
+  text-align: left;
 }
 
 tbody td {
-  padding: 14px 16px;
+  padding: 14px 18px;
   border-bottom: 1px solid var(--color-border-subtle);
   color: var(--color-text-body);
-  font-size: 0.86rem;
+  font-size: 0.84rem;
+  vertical-align: middle;
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
 }
 
 tbody tr:hover {
-  background: #f8fafc;
+  background: #fafafa;
+}
+
+/* Input Fields */
+input[type="text"], input[type="search"], input[type="number"], select {
+  font-family: var(--font-sans);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  font-size: 0.84rem;
+  color: var(--color-text-title);
+  background: #ffffff;
+  transition: var(--transition);
+  outline: none;
+}
+
+input[type="text"]:focus, input[type="search"]:focus, input[type="number"]:focus, select:focus {
+  border-color: #a1a1aa;
 }

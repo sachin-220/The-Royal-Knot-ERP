@@ -1880,9 +1880,10 @@ export default function FinanceSettlementView({ weddingId = 1 }) {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {settlementData?.vendor_settlements?.slice(0, 5).map((v, idx) => {
-                  const contract = v.contract_value_inr || 1;
-                  const advance = v.advance_paid_inr || 0;
-                  const payable = v.remaining_payable_inr || 0;
+                  const contract = v.contract_value || v.contract_value_inr || 1;
+                  const advance = v.advance_paid || v.advance_paid_inr || 0;
+                  const payable = v.remaining_payable || v.remaining_payable_inr || 0;
+                  const categoryName = v.category || v.service_category || 'Vendor Service';
                   const advancePct = Math.min(100, Math.round((advance / contract) * 100));
 
                   return (
@@ -1890,7 +1891,7 @@ export default function FinanceSettlementView({ weddingId = 1 }) {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', fontSize: '0.8rem' }}>
                         <div>
                           <strong>{v.vendor_name}</strong>
-                          <span style={{ color: '#64748b', marginLeft: '6px' }}>({v.service_category})</span>
+                          <span style={{ color: '#64748b', marginLeft: '6px' }}>({categoryName})</span>
                         </div>
                         <div>
                           <span style={{ color: '#16a34a', fontWeight: 700 }}>₹{advance.toLocaleString('en-IN')} Paid</span>
